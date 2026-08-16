@@ -25,6 +25,13 @@ python3 -m http.server 8000
 
 Åbn `http://localhost:8000` i browseren og giv adgang til kameraet.
 
+## Filtre
+
+Fire filterknapper øverst over tilstandsvælgeren: **Normal**, **S/H**, **Sepia**
+og **Varm**. Filteret vises live i kamera-previewet og bages direkte ind i det
+gemte billede (også i fotostrimmel/kvadrat), så "det du ser er det du får".
+Admin kan sætte en standard under Indstillinger.
+
 ## Optagelsestilstande
 
 Der er tre knapper øverst over lukkerknappen i boothen:

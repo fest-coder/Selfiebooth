@@ -108,6 +108,7 @@ const DEFAULT_CONFIG = {
   countdownSeconds: 3,
   reviewSeconds: 8,
   captureMode: 'single', // 'single' | 'strip' | 'grid' — se index.html
+  filter: 'normal', // 'normal' | 'bw' | 'sepia' | 'warm' — se index.html
 };
 
 function getConfig() {

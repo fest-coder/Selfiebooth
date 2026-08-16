@@ -118,6 +118,33 @@
     opacity: 0.5;
   }
 
+  .filter-toggle {
+    display: flex;
+    gap: 8px;
+    background: rgba(0, 0, 0, 0.35);
+    padding: 5px;
+    border-radius: 999px;
+  }
+
+  .filter-pill {
+    background: transparent;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 7px 14px;
+    border-radius: 999px;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+
+  .filter-pill.active {
+    background: var(--accent-pop);
+    color: #fff;
+  }
+
+  .filter-pill:disabled {
+    opacity: 0.5;
+  }
+
   .shutter-btn {
     width: 84px;
     height: 84px;
@@ -330,6 +357,12 @@
   <div class="filmstrip" id="filmstrip"></div>
 
   <div class="controls-bottom">
+    <div class="filter-toggle" id="filterToggle">
+      <button class="filter-pill" data-filter="normal">Normal</button>
+      <button class="filter-pill" data-filter="bw">S/H</button>
+      <button class="filter-pill" data-filter="sepia">Sepia</button>
+      <button class="filter-pill" data-filter="warm">Varm</button>
+    </div>
     <div class="mode-toggle" id="modeToggle">
       <button class="mode-pill" data-mode="single">1 billede</button>
       <button class="mode-pill" data-mode="strip">Fotostrimmel</button>
@@ -384,9 +417,38 @@
   const statusText = document.getElementById('statusText');
   const countdownSub = document.getElementById('countdownSub');
   const modePills = Array.from(document.querySelectorAll('.mode-pill'));
+  const filterPills = Array.from(document.querySelectorAll('.filter-pill'));
+
+  const FILTERS = {
+    normal: { label: 'Normal', css: 'none' },
+    bw: { label: 'S/H', css: 'grayscale(1) contrast(1.05)' },
+    sepia: { label: 'Sepia', css: 'sepia(0.65) contrast(1.05) saturate(1.1)' },
+    warm: { label: 'Varm', css: 'saturate(1.3) contrast(1.05) brightness(1.05) hue-rotate(-6deg)' },
+  };
 
   let isCapturing = false;
   let captureMode = config.captureMode || 'single';
+  let activeFilter = config.filter || 'normal';
+
+  function applyPreviewFilter() {
+    video.style.filter = FILTERS[activeFilter].css;
+  }
+
+  function setActiveFilterPill() {
+    filterPills.forEach((btn) => btn.classList.toggle('active', btn.dataset.filter === activeFilter));
+  }
+  setActiveFilterPill();
+  applyPreviewFilter();
+
+  filterPills.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      if (isCapturing) return;
+      activeFilter = btn.dataset.filter;
+      setActiveFilterPill();
+      applyPreviewFilter();
+      setConfig({ filter: activeFilter });
+    });
+  });
 
   function setActivePill() {
     modePills.forEach((btn) => btn.classList.toggle('active', btn.dataset.mode === captureMode));
@@ -473,7 +535,9 @@
     // Spejlvend ligesom preview, så billedet matcher det gæsten så
     ctx.translate(w, 0);
     ctx.scale(-1, 1);
+    ctx.filter = FILTERS[activeFilter].css;
     ctx.drawImage(video, 0, 0, w, h);
+    ctx.filter = 'none';
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     drawWatermark(ctx, w, h);
 
@@ -506,6 +570,7 @@
       sy = (vh - sh) / 2;
     }
     ctx.save();
+    ctx.filter = FILTERS[activeFilter].css;
     ctx.translate(dx + dw, dy);
     ctx.scale(-1, 1);
     ctx.drawImage(video, sx, sy, sw, sh, 0, 0, dw, dh);

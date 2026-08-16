@@ -262,6 +262,16 @@
         <small>Gæster/personale kan altid skifte tilstand direkte i boothen — dette er bare hvad den starter med.</small>
       </div>
       <div class="field">
+        <label for="filterSelect">Standardfilter</label>
+        <select id="filterSelect">
+          <option value="normal">Normal</option>
+          <option value="bw">Sort/hvid</option>
+          <option value="sepia">Sepia</option>
+          <option value="warm">Varm</option>
+        </select>
+        <small>Kan også skiftes direkte i boothen, ligesom optagelsestilstanden.</small>
+      </div>
+      <div class="field">
         <label for="endpointInput">Upload-endpoint (valgfri)</label>
         <input type="url" id="endpointInput" placeholder="https://din-backend.eksempel.dk/upload">
         <small>URL der modtager billeder som multipart/form-data. Lad stå tom for kun at gemme lokalt på tabletten. Se README.md for eksempler med Supabase/Firebase.</small>
@@ -373,6 +383,7 @@
   const pinInputSetting = document.getElementById('pinInputSetting');
   const endpointInput = document.getElementById('endpointInput');
   const modeSelect = document.getElementById('modeSelect');
+  const filterSelect = document.getElementById('filterSelect');
 
   function loadSettingsForm() {
     const c = getConfig();
@@ -380,6 +391,7 @@
     pinInputSetting.value = c.pin;
     endpointInput.value = c.uploadEndpoint;
     modeSelect.value = c.captureMode;
+    filterSelect.value = c.filter;
   }
   loadSettingsForm();
 
@@ -390,6 +402,7 @@
       pin: pinInputSetting.value.trim() || '1234',
       uploadEndpoint: endpointInput.value.trim(),
       captureMode: modeSelect.value,
+      filter: filterSelect.value,
     });
     const confirmEl = document.getElementById('saveConfirm');
     confirmEl.classList.add('show');
