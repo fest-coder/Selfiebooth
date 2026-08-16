@@ -107,6 +107,7 @@ const DEFAULT_CONFIG = {
   uploadEndpoint: '', // fx en Supabase Storage-URL — se README.md
   countdownSeconds: 3,
   reviewSeconds: 8,
+  captureMode: 'single', // 'single' | 'strip' | 'grid' — se index.html
 };
 
 function getConfig() {

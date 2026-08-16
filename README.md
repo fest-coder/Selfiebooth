@@ -25,9 +25,23 @@ python3 -m http.server 8000
 
 Åbn `http://localhost:8000` i browseren og giv adgang til kameraet.
 
+## Optagelsestilstande
+
+Der er tre knapper øverst over lukkerknappen i boothen:
+
+- **1 billede** — klassisk enkeltbillede, fuld skærm
+- **Fotostrimmel** — tager 4 billeder i træk (med kort pause imellem til at stille
+  sig om) og samler dem i én lodret strimmel med hvid kant og event-navn/dato
+  nederst, ligesom en rigtig photo booth-strimmel
+- **Kvadrat** — samme idé, men som et 2×2-gitter i stedet for en lang strimmel
+
+Valget huskes til næste billede, og admin kan sætte en standard-tilstand under
+Indstillinger, som boothen starter i.
+
 ## Sådan virker det
 
-1. Gæsten trykker på lukkerknappen → 3-2-1 nedtælling → flash → billedet gemmes
+1. Gæsten vælger tilstand (eller bruger standarden) og trykker på lukkerknappen
+   → nedtælling → flash → billedet (eller alle 4, ved strip/kvadrat) gemmes
    **øjeblikkeligt lokalt** på tabletten (IndexedDB) — uanset om der er internet.
 2. Boothen tjekker automatisk hvert 15. sekund (og med det samme ved genoprettet
    forbindelse) om der er ikke-uploadede billeder, og forsøger at sende dem videre.

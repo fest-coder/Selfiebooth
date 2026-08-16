@@ -145,13 +145,15 @@
     font-weight: 600;
   }
 
-  .field input {
+  .field input,
+  .field select {
     background: var(--bg-surface-2);
     border: 1px solid rgba(245, 243, 247, 0.15);
     border-radius: 8px;
     padding: 10px 12px;
     color: var(--text-primary);
     font-size: 14px;
+    font-family: var(--font-body);
   }
 
   .field small {
@@ -249,6 +251,15 @@
         <label for="pinInputSetting">Admin-pinkode</label>
         <input type="text" id="pinInputSetting" required>
         <small>Bruges til langt-tryk-adgang til denne side fra selve boothen.</small>
+      </div>
+      <div class="field">
+        <label for="modeSelect">Standard optagelsestilstand</label>
+        <select id="modeSelect">
+          <option value="single">Ét billede</option>
+          <option value="strip">Fotostrimmel (4 billeder, lodret)</option>
+          <option value="grid">Kvadrat (4 billeder, 2×2)</option>
+        </select>
+        <small>Gæster/personale kan altid skifte tilstand direkte i boothen — dette er bare hvad den starter med.</small>
       </div>
       <div class="field">
         <label for="endpointInput">Upload-endpoint (valgfri)</label>
@@ -361,12 +372,14 @@
   const eventNameInput = document.getElementById('eventNameInput');
   const pinInputSetting = document.getElementById('pinInputSetting');
   const endpointInput = document.getElementById('endpointInput');
+  const modeSelect = document.getElementById('modeSelect');
 
   function loadSettingsForm() {
     const c = getConfig();
     eventNameInput.value = c.eventName;
     pinInputSetting.value = c.pin;
     endpointInput.value = c.uploadEndpoint;
+    modeSelect.value = c.captureMode;
   }
   loadSettingsForm();
 
@@ -376,6 +389,7 @@
       eventName: eventNameInput.value.trim() || 'Din Selfie Booth',
       pin: pinInputSetting.value.trim() || '1234',
       uploadEndpoint: endpointInput.value.trim(),
+      captureMode: modeSelect.value,
     });
     const confirmEl = document.getElementById('saveConfirm');
     confirmEl.classList.add('show');

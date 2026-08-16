@@ -91,6 +91,33 @@
     font-weight: 600;
   }
 
+  .mode-toggle {
+    display: flex;
+    gap: 8px;
+    background: rgba(0, 0, 0, 0.35);
+    padding: 5px;
+    border-radius: 999px;
+  }
+
+  .mode-pill {
+    background: transparent;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 16px;
+    border-radius: 999px;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+
+  .mode-pill.active {
+    background: var(--accent-flash);
+    color: #241d00;
+  }
+
+  .mode-pill:disabled {
+    opacity: 0.5;
+  }
+
   .shutter-btn {
     width: 84px;
     height: 84px;
@@ -182,6 +209,15 @@
     animation: pulse 1s ease-out;
   }
 
+  .countdown-sub {
+    font-family: var(--font-body);
+    font-size: 18px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.85);
+    margin-top: 14px;
+    min-height: 24px;
+  }
+
   @keyframes pulse {
     0% { transform: scale(0.6); opacity: 0; }
     30% { transform: scale(1.08); opacity: 1; }
@@ -217,11 +253,18 @@
     border-radius: 4px;
     box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
     max-width: min(80vw, 420px);
+    max-height: 78vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .polaroid img {
     display: block;
-    width: 100%;
+    max-width: 100%;
+    max-height: 68vh;
+    width: auto;
+    height: auto;
     border-radius: 2px;
   }
 
@@ -287,6 +330,11 @@
   <div class="filmstrip" id="filmstrip"></div>
 
   <div class="controls-bottom">
+    <div class="mode-toggle" id="modeToggle">
+      <button class="mode-pill" data-mode="single">1 billede</button>
+      <button class="mode-pill" data-mode="strip">Fotostrimmel</button>
+      <button class="mode-pill" data-mode="grid">Kvadrat</button>
+    </div>
     <div class="hint">Tryk for at tage billede</div>
     <button class="shutter-btn" id="shutterBtn" aria-label="Tag billede">
       <span class="inner"></span>
@@ -296,6 +344,7 @@
 
 <div class="overlay" id="countdownOverlay">
   <div class="countdown-number" id="countdownNumber">3</div>
+  <div class="countdown-sub" id="countdownSub"></div>
 </div>
 
 <div class="overlay" id="flashOverlay"></div>
@@ -333,8 +382,25 @@
   const canvas = document.getElementById('captureCanvas');
   const statusDot = document.getElementById('statusDot');
   const statusText = document.getElementById('statusText');
+  const countdownSub = document.getElementById('countdownSub');
+  const modePills = Array.from(document.querySelectorAll('.mode-pill'));
 
   let isCapturing = false;
+  let captureMode = config.captureMode || 'single';
+
+  function setActivePill() {
+    modePills.forEach((btn) => btn.classList.toggle('active', btn.dataset.mode === captureMode));
+  }
+  setActivePill();
+
+  modePills.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      if (isCapturing) return;
+      captureMode = btn.dataset.mode;
+      setActivePill();
+      setConfig({ captureMode });
+    });
+  });
 
   async function initCamera() {
     try {
@@ -365,7 +431,8 @@
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
-  async function runCountdown() {
+  async function runCountdown(subLabel) {
+    countdownSub.textContent = subLabel || '';
     countdownOverlay.classList.add('active');
     for (let n = config.countdownSeconds; n >= 1; n -= 1) {
       countdownNumber.textContent = String(n);
@@ -415,6 +482,122 @@
     });
   }
 
+  // Tegner videobilledet spejlvendt, beskåret til et bestemt mål-format,
+  // ind i et vilkårligt canvas-felt. Bruges til at lave ensartede celler
+  // til fotostrimmel og kvadrat, uanset tabletens kamera-format.
+  function drawMirroredCropped(ctx, dx, dy, dw, dh) {
+    const vw = video.videoWidth;
+    const vh = video.videoHeight;
+    const targetAr = dw / dh;
+    const sourceAr = vw / vh;
+    let sx;
+    let sy;
+    let sw;
+    let sh;
+    if (sourceAr > targetAr) {
+      sh = vh;
+      sw = vh * targetAr;
+      sy = 0;
+      sx = (vw - sw) / 2;
+    } else {
+      sw = vw;
+      sh = vw / targetAr;
+      sx = 0;
+      sy = (vh - sh) / 2;
+    }
+    ctx.save();
+    ctx.translate(dx + dw, dy);
+    ctx.scale(-1, 1);
+    ctx.drawImage(video, sx, sy, sw, sh, 0, 0, dw, dh);
+    ctx.restore();
+  }
+
+  function captureCell(w, h) {
+    const cell = document.createElement('canvas');
+    cell.width = w;
+    cell.height = h;
+    drawMirroredCropped(cell.getContext('2d'), 0, 0, w, h);
+    return cell;
+  }
+
+  function drawCaption(ctx, centerX, centerY) {
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#14121a';
+    ctx.font = "700 22px -apple-system, system-ui, sans-serif";
+    ctx.fillText(config.eventName, centerX, centerY - 6);
+    ctx.fillStyle = '#7a7a7a';
+    ctx.font = "500 14px -apple-system, system-ui, sans-serif";
+    const dateStr = new Date().toLocaleDateString('da-DK', { day: 'numeric', month: 'long', year: 'numeric' });
+    ctx.fillText(dateStr, centerX, centerY + 16);
+  }
+
+  const STRIP_CELL = { w: 360, h: 480 };
+  const GRID_CELL = { w: 320, h: 320 };
+  const MARGIN = 16;
+  const GUTTER = 12;
+  const CAPTION_H = 70;
+
+  function composeStrip(frames) {
+    const { w, h } = STRIP_CELL;
+    const totalW = w + MARGIN * 2;
+    const totalH = MARGIN + frames.length * h + (frames.length - 1) * GUTTER + MARGIN + CAPTION_H;
+    const out = document.createElement('canvas');
+    out.width = totalW;
+    out.height = totalH;
+    const ctx = out.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, totalW, totalH);
+    frames.forEach((frame, i) => {
+      const y = MARGIN + i * (h + GUTTER);
+      ctx.drawImage(frame, MARGIN, y, w, h);
+    });
+    drawCaption(ctx, totalW / 2, totalH - CAPTION_H / 2);
+    return out;
+  }
+
+  function composeGrid(frames) {
+    const { w, h } = GRID_CELL;
+    const totalW = MARGIN * 2 + w * 2 + GUTTER;
+    const totalH = MARGIN * 2 + h * 2 + GUTTER + CAPTION_H;
+    const out = document.createElement('canvas');
+    out.width = totalW;
+    out.height = totalH;
+    const ctx = out.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, totalW, totalH);
+    frames.forEach((frame, i) => {
+      const col = i % 2;
+      const row = Math.floor(i / 2);
+      const x = MARGIN + col * (w + GUTTER);
+      const y = MARGIN + row * (h + GUTTER);
+      ctx.drawImage(frame, x, y, w, h);
+    });
+    drawCaption(ctx, totalW / 2, totalH - CAPTION_H / 2);
+    return out;
+  }
+
+  async function handleMultiShot(mode) {
+    const shots = 4;
+    const cellDims = mode === 'grid' ? GRID_CELL : STRIP_CELL;
+    const frames = [];
+    for (let i = 1; i <= shots; i += 1) {
+      // eslint-disable-next-line no-await-in-loop
+      await runCountdown(`Billede ${i} af ${shots}`);
+      triggerFlash();
+      frames.push(captureCell(cellDims.w, cellDims.h));
+      if (i < shots) {
+        // eslint-disable-next-line no-await-in-loop
+        await wait(700); // kort pause så gæsten kan nå at stille sig om
+      }
+    }
+    const composed = mode === 'grid' ? composeGrid(frames) : composeStrip(frames);
+    const blob = await new Promise((resolve) => composed.toBlob(resolve, 'image/jpeg', 0.92));
+    await addPhoto(blob);
+    addToFilmstrip(blob);
+    await showReview(blob, mode);
+    trySyncQueue();
+  }
+
   function addToFilmstrip(blob) {
     const url = URL.createObjectURL(blob);
     const thumb = document.createElement('div');
@@ -426,12 +609,15 @@
     }
   }
 
-  async function showReview(blob) {
+  async function showReview(blob, kind) {
     const url = URL.createObjectURL(blob);
     reviewImg.src = url;
+    const savedLabel = kind === 'strip' ? 'Fotostrimmel gemt'
+      : kind === 'grid' ? 'Kvadrat-billede gemt'
+      : 'Gemt til boothen';
     reviewCaption.innerHTML = navigator.onLine
-      ? 'Gemt til boothen <strong>✓</strong>'
-      : 'Gemt lokalt <strong>✓</strong> — uploades når I er online igen';
+      ? `${savedLabel} <strong>✓</strong>`
+      : `${savedLabel} lokalt <strong>✓</strong> — uploades når I er online igen`;
     reviewOverlay.classList.add('active');
 
     reviewProgressBar.style.transition = 'none';
@@ -450,18 +636,24 @@
     if (isCapturing) return;
     isCapturing = true;
     shutterBtn.disabled = true;
+    modePills.forEach((btn) => { btn.disabled = true; });
 
     try {
-      await runCountdown();
-      triggerFlash();
-      const blob = await capturePhoto();
-      await addPhoto(blob);
-      addToFilmstrip(blob);
-      await showReview(blob);
-      trySyncQueue(); // forsøg med det samme — no-op hvis offline eller ingen endpoint sat
+      if (captureMode === 'strip' || captureMode === 'grid') {
+        await handleMultiShot(captureMode);
+      } else {
+        await runCountdown();
+        triggerFlash();
+        const blob = await capturePhoto();
+        await addPhoto(blob);
+        addToFilmstrip(blob);
+        await showReview(blob, 'single');
+        trySyncQueue(); // forsøg med det samme — no-op hvis offline eller ingen endpoint sat
+      }
     } finally {
       isCapturing = false;
       shutterBtn.disabled = false;
+      modePills.forEach((btn) => { btn.disabled = false; });
     }
   }
 
