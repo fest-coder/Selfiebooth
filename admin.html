@@ -219,6 +219,11 @@
   </header>
 
   <section>
+    <h2>Kamera</h2>
+    <p id="cameraInfo" style="color:var(--text-muted); font-size:14px; margin:0; line-height:1.6;">Åbn selve boothen mindst én gang på denne iPad, så vises den målte opløsning her.</p>
+  </section>
+
+  <section>
     <h2>Synkronisering</h2>
     <div class="sync-row">
       <div class="sync-stats">
@@ -298,6 +303,20 @@
     pinGate.style.display = 'none';
     adminContent.style.display = 'block';
     refreshGallery();
+    loadCameraInfo();
+  }
+
+  function loadCameraInfo() {
+    const el = document.getElementById('cameraInfo');
+    try {
+      const raw = localStorage.getItem('boothCameraInfo');
+      if (!raw) return;
+      const info = JSON.parse(raw);
+      const mp = ((info.width * info.height) / 1e6).toFixed(1);
+      el.textContent = `${info.width} × ${info.height} pixels (~${mp} MP) — målt ${new Date(info.updatedAt).toLocaleString('da-DK')}`;
+    } catch {
+      // behold standardteksten hvis noget går galt
+    }
   }
 
   document.getElementById('pinSubmit').addEventListener('click', attemptUnlock);

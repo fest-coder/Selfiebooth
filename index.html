@@ -467,10 +467,21 @@
   async function initCamera() {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 1280 } },
+        // "ideal" her er bevidst sat højere end noget iPad-frontkamera reelt
+        // leverer i dag — browseren vælger automatisk den højeste opløsning,
+        // den faktisk understøtter, i stedet for at vi selv skal gætte den.
+        video: { facingMode: 'user', width: { ideal: 4032 }, height: { ideal: 3024 } },
         audio: false,
       });
       video.srcObject = stream;
+      video.addEventListener('loadedmetadata', () => {
+        const info = { width: video.videoWidth, height: video.videoHeight, updatedAt: Date.now() };
+        try {
+          localStorage.setItem('boothCameraInfo', JSON.stringify(info));
+        } catch {
+          // ignorer — kun til diagnostik, ikke kritisk
+        }
+      }, { once: true });
     } catch (err) {
       console.error('Kamera-fejl', err);
       permissionText.textContent = err.name === 'NotAllowedError'

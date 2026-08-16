@@ -32,6 +32,24 @@ og **Varm**. Filteret vises live i kamera-previewet og bages direkte ind i det
 gemte billede (også i fotostrimmel/kvadrat), så "det du ser er det du får".
 Admin kan sætte en standard under Indstillinger.
 
+## Få det bedste ud af iPad'ens eget kamera
+
+Vi beder nu bevidst kameraet om sin højeste tilgængelige opløsning (browseren
+vælger selv det nærmeste, den kan levere). Åbn boothen og tjek Admin → Kamera
+for at se præcis hvilken opløsning jeres specifikke iPad rent faktisk leverer.
+
+Skarpheden afhænger dog mindst lige så meget af lys og afstand som af
+opløsning:
+
+- **Ringlys er ikke valgfrit** — det er den enkeltstående ting, der gør mest
+  for billedkvaliteten. Uden det bliver billederne støjede og bløde, uanset
+  hvor mange megapixel kameraet har.
+- **Hold god afstand** — iPad'ens frontkamera er ultra-wide, så ansigter tæt
+  på linsen bliver let fortegnet. Sigt efter mindst 1–1,5 meter mellem gæst
+  og tablet.
+- **Rengør linsen** før hvert event — fingeraftryk og støv er en overraskende
+  almindelig kilde til bløde billeder.
+
 ## Optagelsestilstande
 
 Der er tre knapper øverst over lukkerknappen i boothen:
