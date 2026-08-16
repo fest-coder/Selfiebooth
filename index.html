@@ -681,11 +681,35 @@
     eventNameLabel.addEventListener(evt, cancelHold);
   });
 
+  // Holder skærmen vågen, så tabletten ikke låser/dæmper midt i et event.
+  // Wake locket frigives automatisk af browseren, hvis siden bliver skjult
+  // (fx app-skift), så vi henter det igen, når den bliver synlig igen.
+  let wakeLock = null;
+
+  async function requestWakeLock() {
+    if (!('wakeLock' in navigator)) return;
+    try {
+      wakeLock = await navigator.wakeLock.request('screen');
+      wakeLock.addEventListener('release', () => {
+        wakeLock = null;
+      });
+    } catch (err) {
+      console.warn('Kunne ikke holde skærmen vågen', err);
+    }
+  }
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      requestWakeLock();
+    }
+  });
+
   // Forsøg fuldskærm ved første tryk nogen steder — hjælper kiosk-følelsen
   document.body.addEventListener('click', function enterFullscreen() {
     if (document.documentElement.requestFullscreen) {
       document.documentElement.requestFullscreen().catch(() => {});
     }
+    requestWakeLock();
     document.body.removeEventListener('click', enterFullscreen);
   }, { once: true });
 
@@ -696,6 +720,7 @@
   })();
 
   initCamera();
+  requestWakeLock();
   startBackgroundSync(15000, (status) => {
     // status: 'syncing' | 'idle' — kan bruges til at vise et lille sync-ikon, hvis ønsket
   });

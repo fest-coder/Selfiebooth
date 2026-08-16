@@ -94,6 +94,9 @@ rigelige til dette).
 
 ## Kendte begrænsninger i denne prototype
 
+- Skærmen holdes vågen via Screen Wake Lock API (understøttet i Safari fra
+  iPadOS 16.4). På ældre iPadOS skal I stadig sætte Auto-Lock til "Aldrig" under
+  Indstillinger → Skærm og lysstyrke, som ekstra sikkerhed.
 - Cloud-upload er en integration, I selv skal koble til (se ovenfor) — der er
   ingen "rigtig" backend inkluderet, da det kræver jeres egne cloud-nøgler.
 - Baggrunds-sync på iPad/Safari er ikke en ægte OS-niveau baggrundsproces (Safari
