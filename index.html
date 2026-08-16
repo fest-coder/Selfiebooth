@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Selfie Booth</title>
+<link rel="manifest" href="manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Fraunces:ital,wght@0,500;1,500&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+  .stage {
+    position: fixed;
+    inset: 0;
+    background: #000;
+    overflow: hidden;
+  }
+
+  video#preview {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform: scaleX(-1);
+  }
+
+  video#preview.hidden-preview {
+    visibility: hidden;
+  }
+
+  .topbar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 5;
+    padding: max(20px, env(safe-area-inset-top)) 28px 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.6), transparent);
+    pointer-events: none;
+  }
+
+  .event-name {
+    font-family: var(--font-editorial);
+    font-style: italic;
+    font-size: 24px;
+    color: #fff;
+    letter-spacing: 0.01em;
+    pointer-events: auto;
+  }
+
+  .status-dot {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.75);
+    font-weight: 600;
+  }
+
+  .status-dot .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--success);
+  }
+
+  .status-dot.offline .dot {
+    background: var(--danger);
+  }
+
+  .controls-bottom {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 5;
+    padding: 40px 24px max(32px, env(safe-area-inset-bottom));
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.65), transparent);
+  }
+
+  .hint {
+    font-size: 15px;
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: 600;
+  }
+
+  .shutter-btn {
+    width: 84px;
+    height: 84px;
+    border-radius: 50%;
+    background: transparent;
+    border: 4px solid var(--accent-flash);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    transition: transform 0.15s ease;
+  }
+
+  .shutter-btn:active {
+    transform: scale(0.92);
+  }
+
+  .shutter-btn .inner {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: #fff;
+  }
+
+  .shutter-btn:disabled {
+    opacity: 0.4;
+  }
+
+  .filmstrip {
+    position: absolute;
+    bottom: max(150px, calc(env(safe-area-inset-bottom) + 150px));
+    left: 24px;
+    z-index: 4;
+    display: flex;
+    gap: 10px;
+  }
+
+  .filmstrip .thumb {
+    width: 58px;
+    height: 58px;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 2px solid var(--accent-pop);
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.4);
+  }
+
+  .filmstrip .thumb:nth-child(odd) {
+    transform: rotate(-4deg);
+  }
+
+  .filmstrip .thumb:nth-child(even) {
+    transform: rotate(3deg);
+  }
+
+  .filmstrip .thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 10;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+  }
+
+  .overlay.active {
+    display: flex;
+  }
+
+  #countdownOverlay {
+    background: rgba(0, 0, 0, 0.4);
+  }
+
+  .countdown-number {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 240px;
+    color: var(--accent-flash);
+    text-shadow: 0 0 60px rgba(255, 210, 63, 0.5);
+    line-height: 1;
+  }
+
+  .countdown-number.pulse {
+    animation: pulse 1s ease-out;
+  }
+
+  @keyframes pulse {
+    0% { transform: scale(0.6); opacity: 0; }
+    30% { transform: scale(1.08); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  #flashOverlay {
+    background: #fff;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 20;
+  }
+
+  #flashOverlay.flash-active {
+    animation: flashPulse 0.35s ease-out;
+  }
+
+  @keyframes flashPulse {
+    0% { opacity: 0; }
+    15% { opacity: 1; }
+    100% { opacity: 0; }
+  }
+
+  #reviewOverlay {
+    background: var(--bg-deep);
+    gap: 20px;
+    padding: 24px;
+  }
+
+  .polaroid {
+    background: #fff;
+    padding: 14px 14px 40px;
+    border-radius: 4px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+    max-width: min(80vw, 420px);
+  }
+
+  .polaroid img {
+    display: block;
+    width: 100%;
+    border-radius: 2px;
+  }
+
+  .review-caption {
+    font-size: 15px;
+    color: var(--text-muted);
+    font-weight: 600;
+    text-align: center;
+  }
+
+  .review-caption strong {
+    color: var(--accent-flash);
+  }
+
+  .review-progress {
+    width: 180px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .review-progress-bar {
+    height: 100%;
+    background: var(--accent-flash);
+    width: 100%;
+    transform-origin: left;
+  }
+
+  #permissionOverlay {
+    background: var(--bg-deep);
+    padding: 40px;
+    text-align: center;
+    gap: 16px;
+  }
+
+  #permissionOverlay h2 {
+    font-family: var(--font-editorial);
+    font-style: italic;
+    font-weight: 500;
+    font-size: 26px;
+    margin: 0;
+  }
+
+  #permissionOverlay p {
+    color: var(--text-muted);
+    max-width: 420px;
+    line-height: 1.6;
+    margin: 0;
+  }
+</style>
+</head>
+<body>
+
+<div class="stage">
+  <video id="preview" autoplay playsinline muted></video>
+
+  <div class="topbar">
+    <div class="event-name" id="eventNameLabel">Din Selfie Booth</div>
+    <div class="status-dot" id="statusDot"><span class="dot"></span><span id="statusText">Online</span></div>
+  </div>
+
+  <div class="filmstrip" id="filmstrip"></div>
+
+  <div class="controls-bottom">
+    <div class="hint">Tryk for at tage billede</div>
+    <button class="shutter-btn" id="shutterBtn" aria-label="Tag billede">
+      <span class="inner"></span>
+    </button>
+  </div>
+</div>
+
+<div class="overlay" id="countdownOverlay">
+  <div class="countdown-number" id="countdownNumber">3</div>
+</div>
+
+<div class="overlay" id="flashOverlay"></div>
+
+<div class="overlay" id="reviewOverlay">
+  <div class="polaroid"><img id="reviewImg" alt="Dit billede"></div>
+  <div class="review-caption" id="reviewCaption">Gemt til boothen <strong>✓</strong></div>
+  <div class="review-progress"><div class="review-progress-bar" id="reviewProgressBar"></div></div>
+</div>
+
+<div class="overlay" id="permissionOverlay">
+  <h2>Kameraet mangler adgang</h2>
+  <p id="permissionText">Denne enhed skal give adgang til kameraet, før boothen kan bruges. Tjek browserens indstillinger og genindlæs siden.</p>
+</div>
+
+<canvas id="captureCanvas" style="display:none"></canvas>
+
+<script src="db.js"></script>
+<script>
+  const config = getConfig();
+  document.getElementById('eventNameLabel').textContent = config.eventName;
+
+  const video = document.getElementById('preview');
+  const shutterBtn = document.getElementById('shutterBtn');
+  const countdownOverlay = document.getElementById('countdownOverlay');
+  const countdownNumber = document.getElementById('countdownNumber');
+  const flashOverlay = document.getElementById('flashOverlay');
+  const reviewOverlay = document.getElementById('reviewOverlay');
+  const reviewImg = document.getElementById('reviewImg');
+  const reviewCaption = document.getElementById('reviewCaption');
+  const reviewProgressBar = document.getElementById('reviewProgressBar');
+  const permissionOverlay = document.getElementById('permissionOverlay');
+  const permissionText = document.getElementById('permissionText');
+  const filmstrip = document.getElementById('filmstrip');
+  const canvas = document.getElementById('captureCanvas');
+  const statusDot = document.getElementById('statusDot');
+  const statusText = document.getElementById('statusText');
+
+  let isCapturing = false;
+
+  async function initCamera() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 1280 } },
+        audio: false,
+      });
+      video.srcObject = stream;
+    } catch (err) {
+      console.error('Kamera-fejl', err);
+      permissionText.textContent = err.name === 'NotAllowedError'
+        ? 'Adgang til kameraet blev afvist. Genindlæs siden og tillad adgang, når browseren spørger.'
+        : 'Kunne ikke starte kameraet på denne enhed. Tjek at ingen anden app bruger det, og genindlæs siden.';
+      permissionOverlay.classList.add('active');
+    }
+  }
+
+  function updateOnlineStatus() {
+    const online = navigator.onLine;
+    statusDot.classList.toggle('offline', !online);
+    statusText.textContent = online ? 'Online' : 'Offline · gemmer lokalt';
+  }
+  window.addEventListener('online', updateOnlineStatus);
+  window.addEventListener('offline', updateOnlineStatus);
+  updateOnlineStatus();
+
+  function wait(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  async function runCountdown() {
+    countdownOverlay.classList.add('active');
+    for (let n = config.countdownSeconds; n >= 1; n -= 1) {
+      countdownNumber.textContent = String(n);
+      countdownNumber.classList.remove('pulse');
+      // eslint-disable-next-line no-unused-expressions
+      void countdownNumber.offsetWidth; // genstart animation
+      countdownNumber.classList.add('pulse');
+      await wait(1000);
+    }
+    countdownOverlay.classList.remove('active');
+  }
+
+  function triggerFlash() {
+    flashOverlay.classList.add('flash-active');
+    setTimeout(() => flashOverlay.classList.remove('flash-active'), 400);
+  }
+
+  function drawWatermark(ctx, w, h) {
+    const label = config.eventName;
+    ctx.save();
+    ctx.font = '600 28px Inter, sans-serif';
+    ctx.textBaseline = 'bottom';
+    const metrics = ctx.measureText(label);
+    const padding = 24;
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+    ctx.fillRect(0, h - 64, metrics.width + padding * 2, 64);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(label, padding, h - 20);
+    ctx.restore();
+  }
+
+  function capturePhoto() {
+    const w = video.videoWidth;
+    const h = video.videoHeight;
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    // Spejlvend ligesom preview, så billedet matcher det gæsten så
+    ctx.translate(w, 0);
+    ctx.scale(-1, 1);
+    ctx.drawImage(video, 0, 0, w, h);
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    drawWatermark(ctx, w, h);
+
+    return new Promise((resolve) => {
+      canvas.toBlob((blob) => resolve(blob), 'image/jpeg', 0.92);
+    });
+  }
+
+  function addToFilmstrip(blob) {
+    const url = URL.createObjectURL(blob);
+    const thumb = document.createElement('div');
+    thumb.className = 'thumb';
+    thumb.innerHTML = `<img src="${url}" alt="Tidligere billede">`;
+    filmstrip.insertBefore(thumb, filmstrip.firstChild);
+    while (filmstrip.children.length > 4) {
+      filmstrip.removeChild(filmstrip.lastChild);
+    }
+  }
+
+  async function showReview(blob) {
+    const url = URL.createObjectURL(blob);
+    reviewImg.src = url;
+    reviewCaption.innerHTML = navigator.onLine
+      ? 'Gemt til boothen <strong>✓</strong>'
+      : 'Gemt lokalt <strong>✓</strong> — uploades når I er online igen';
+    reviewOverlay.classList.add('active');
+
+    reviewProgressBar.style.transition = 'none';
+    reviewProgressBar.style.transform = 'scaleX(1)';
+    // eslint-disable-next-line no-unused-expressions
+    void reviewProgressBar.offsetWidth;
+    reviewProgressBar.style.transition = `transform ${config.reviewSeconds}s linear`;
+    reviewProgressBar.style.transform = 'scaleX(0)';
+
+    await wait(config.reviewSeconds * 1000);
+    reviewOverlay.classList.remove('active');
+    URL.revokeObjectURL(url);
+  }
+
+  async function handleShutter() {
+    if (isCapturing) return;
+    isCapturing = true;
+    shutterBtn.disabled = true;
+
+    try {
+      await runCountdown();
+      triggerFlash();
+      const blob = await capturePhoto();
+      await addPhoto(blob);
+      addToFilmstrip(blob);
+      await showReview(blob);
+      trySyncQueue(); // forsøg med det samme — no-op hvis offline eller ingen endpoint sat
+    } finally {
+      isCapturing = false;
+      shutterBtn.disabled = false;
+    }
+  }
+
+  shutterBtn.addEventListener('click', handleShutter);
+
+  // Admin-adgang: langt tryk (2,5s) på event-navnet i toppen
+  let holdTimer = null;
+  const eventNameLabel = document.getElementById('eventNameLabel');
+  function startHold() {
+    holdTimer = setTimeout(() => {
+      const pin = prompt('Indtast pinkode for admin-adgang:');
+      if (pin === config.pin) {
+        window.location.href = 'admin.html';
+      } else if (pin !== null) {
+        alert('Forkert pinkode.');
+      }
+    }, 2500);
+  }
+  function cancelHold() {
+    clearTimeout(holdTimer);
+  }
+  eventNameLabel.addEventListener('mousedown', startHold);
+  eventNameLabel.addEventListener('touchstart', startHold);
+  ['mouseup', 'mouseleave', 'touchend', 'touchcancel'].forEach((evt) => {
+    eventNameLabel.addEventListener(evt, cancelHold);
+  });
+
+  // Forsøg fuldskærm ved første tryk nogen steder — hjælper kiosk-følelsen
+  document.body.addEventListener('click', function enterFullscreen() {
+    if (document.documentElement.requestFullscreen) {
+      document.documentElement.requestFullscreen().catch(() => {});
+    }
+    document.body.removeEventListener('click', enterFullscreen);
+  }, { once: true });
+
+  // Vis eksisterende billeder i filmstrip ved opstart
+  (async function loadExistingFilmstrip() {
+    const photos = await getAllPhotos();
+    photos.slice(0, 4).reverse().forEach((p) => addToFilmstrip(p.blob));
+  })();
+
+  initCamera();
+  startBackgroundSync(15000, (status) => {
+    // status: 'syncing' | 'idle' — kan bruges til at vise et lille sync-ikon, hvis ønsket
+  });
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch((err) => console.warn('Service worker fejlede', err));
+    });
+  }
+</script>
+</body>
+</html>

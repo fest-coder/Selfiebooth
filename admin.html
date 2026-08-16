@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Selfie Booth · Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Fraunces:ital,wght@0,500;1,500&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+  body { user-select: text; }
+
+  .wrap {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+  }
+
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 32px;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  h1 {
+    font-family: var(--font-editorial);
+    font-style: italic;
+    font-weight: 500;
+    font-size: 32px;
+    margin: 0;
+  }
+
+  .back-link {
+    color: var(--text-muted);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 14px;
+  }
+
+  section {
+    background: var(--bg-surface);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 24px;
+  }
+
+  section h2 {
+    font-family: var(--font-display);
+    font-size: 18px;
+    margin: 0 0 16px;
+  }
+
+  .sync-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .sync-stats {
+    display: flex;
+    gap: 24px;
+    color: var(--text-muted);
+    font-size: 14px;
+  }
+
+  .sync-stats strong {
+    color: var(--text-primary);
+    font-size: 20px;
+    display: block;
+    font-family: var(--font-display);
+  }
+
+  .gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 14px;
+  }
+
+  .card {
+    background: var(--bg-surface-2);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .card img {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    display: block;
+  }
+
+  .card-meta {
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .card-meta time {
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  .card-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  .card-actions a,
+  .card-actions button {
+    flex: 1;
+    font-size: 12px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    text-align: center;
+    text-decoration: none;
+  }
+
+  .empty-state {
+    color: var(--text-muted);
+    text-align: center;
+    padding: 40px 0;
+  }
+
+  form.settings {
+    display: grid;
+    gap: 16px;
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .field label {
+    font-size: 13px;
+    color: var(--text-muted);
+    font-weight: 600;
+  }
+
+  .field input {
+    background: var(--bg-surface-2);
+    border: 1px solid rgba(245, 243, 247, 0.15);
+    border-radius: 8px;
+    padding: 10px 12px;
+    color: var(--text-primary);
+    font-size: 14px;
+  }
+
+  .field small {
+    color: var(--text-muted);
+    font-size: 12px;
+    line-height: 1.5;
+  }
+
+  .save-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .save-confirm {
+    font-size: 13px;
+    color: var(--success);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  .save-confirm.show {
+    opacity: 1;
+  }
+
+  #pinGate {
+    max-width: 320px;
+    margin: 120px auto;
+    text-align: center;
+  }
+
+  #pinGate input {
+    width: 100%;
+    text-align: center;
+    font-size: 24px;
+    letter-spacing: 8px;
+    padding: 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(245, 243, 247, 0.2);
+    background: var(--bg-surface);
+    color: var(--text-primary);
+    margin: 16px 0;
+  }
+
+  #adminContent {
+    display: none;
+  }
+</style>
+</head>
+<body>
+
+<div id="pinGate">
+  <h1>Admin-adgang</h1>
+  <input type="password" inputmode="numeric" id="pinInput" placeholder="Pinkode" autofocus>
+  <button class="btn btn-primary" id="pinSubmit">Log ind</button>
+  <p id="pinError" style="color:var(--danger); font-size:13px; min-height:18px;"></p>
+</div>
+
+<div class="wrap" id="adminContent">
+  <header>
+    <h1>Booth-admin</h1>
+    <a class="back-link" href="index.html">← Tilbage til boothen</a>
+  </header>
+
+  <section>
+    <h2>Synkronisering</h2>
+    <div class="sync-row">
+      <div class="sync-stats">
+        <div><strong id="statPending">0</strong>venter</div>
+        <div><strong id="statSynced">0</strong>uploadet</div>
+        <div><strong id="statTotal">0</strong>i alt</div>
+      </div>
+      <button class="btn btn-primary" id="syncNowBtn">Synkroniser nu</button>
+    </div>
+    <p id="syncMessage" style="color:var(--text-muted); font-size:13px; margin: 12px 0 0;"></p>
+  </section>
+
+  <section>
+    <h2>Galleri</h2>
+    <div class="gallery" id="gallery"></div>
+    <div class="empty-state" id="emptyState" style="display:none;">Ingen billeder endnu — de dukker op her, så snart nogen bruger boothen.</div>
+    <div style="margin-top:16px;">
+      <button class="btn btn-danger" id="clearAllBtn">Slet alle billeder</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>Indstillinger</h2>
+    <form class="settings" id="settingsForm">
+      <div class="field">
+        <label for="eventNameInput">Event-navn (vises i boothen og på billederne)</label>
+        <input type="text" id="eventNameInput" required>
+      </div>
+      <div class="field">
+        <label for="pinInputSetting">Admin-pinkode</label>
+        <input type="text" id="pinInputSetting" required>
+        <small>Bruges til langt-tryk-adgang til denne side fra selve boothen.</small>
+      </div>
+      <div class="field">
+        <label for="endpointInput">Upload-endpoint (valgfri)</label>
+        <input type="url" id="endpointInput" placeholder="https://din-backend.eksempel.dk/upload">
+        <small>URL der modtager billeder som multipart/form-data. Lad stå tom for kun at gemme lokalt på tabletten. Se README.md for eksempler med Supabase/Firebase.</small>
+      </div>
+      <div class="save-row">
+        <button type="submit" class="btn btn-primary">Gem indstillinger</button>
+        <span class="save-confirm" id="saveConfirm">Gemt ✓</span>
+      </div>
+    </form>
+  </section>
+</div>
+
+<script src="db.js"></script>
+<script>
+  const config = getConfig();
+
+  // --- PIN gate ---
+  const pinGate = document.getElementById('pinGate');
+  const adminContent = document.getElementById('adminContent');
+  const pinInput = document.getElementById('pinInput');
+  const pinError = document.getElementById('pinError');
+
+  function unlock() {
+    pinGate.style.display = 'none';
+    adminContent.style.display = 'block';
+    refreshGallery();
+  }
+
+  document.getElementById('pinSubmit').addEventListener('click', attemptUnlock);
+  pinInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') attemptUnlock(); });
+
+  function attemptUnlock() {
+    if (pinInput.value === getConfig().pin) {
+      unlock();
+    } else {
+      pinError.textContent = 'Forkert pinkode — prøv igen.';
+    }
+  }
+
+  // --- Galleri + sync ---
+  async function refreshGallery() {
+    const photos = await getAllPhotos();
+    const gallery = document.getElementById('gallery');
+    const emptyState = document.getElementById('emptyState');
+    gallery.innerHTML = '';
+
+    if (photos.length === 0) {
+      emptyState.style.display = 'block';
+    } else {
+      emptyState.style.display = 'none';
+    }
+
+    let synced = 0;
+    photos.forEach((p) => {
+      if (p.synced) synced += 1;
+      const url = URL.createObjectURL(p.blob);
+      const card = document.createElement('div');
+      card.className = 'card';
+      const date = new Date(p.timestamp);
+      const badge = p.synced
+        ? '<span class="badge badge-synced">✓ Uploadet</span>'
+        : '<span class="badge badge-pending">⏳ Venter</span>';
+      card.innerHTML = `
+        <img src="${url}" alt="Booth-billede">
+        <div class="card-meta">
+          <time>${date.toLocaleString('da-DK')}</time>
+          ${badge}
+          <div class="card-actions">
+            <a class="btn btn-ghost" href="${url}" download="booth-${p.id}.jpg">Download</a>
+            <button class="btn btn-danger" data-id="${p.id}">Slet</button>
+          </div>
+        </div>
+      `;
+      card.querySelector('button[data-id]').addEventListener('click', async () => {
+        await deletePhoto(p.id);
+        refreshGallery();
+      });
+      gallery.appendChild(card);
+    });
+
+    document.getElementById('statPending').textContent = photos.length - synced;
+    document.getElementById('statSynced').textContent = synced;
+    document.getElementById('statTotal').textContent = photos.length;
+  }
+
+  document.getElementById('syncNowBtn').addEventListener('click', async () => {
+    const msg = document.getElementById('syncMessage');
+    msg.textContent = 'Synkroniserer …';
+    const result = await trySyncQueue();
+    if (result.skipped) {
+      msg.textContent = result.reason === 'offline'
+        ? 'Ingen forbindelse lige nu — prøver automatisk igen når I er online.'
+        : 'Der er ikke sat et upload-endpoint op endnu — se Indstillinger nedenfor.';
+    } else {
+      msg.textContent = `${result.succeeded} af ${result.attempted} billeder blev uploadet.`;
+    }
+    refreshGallery();
+  });
+
+  document.getElementById('clearAllBtn').addEventListener('click', async () => {
+    if (confirm('Slet alle billeder permanent fra denne enhed? Dette kan ikke fortrydes.')) {
+      await deleteAllPhotos();
+      refreshGallery();
+    }
+  });
+
+  // --- Indstillinger ---
+  const eventNameInput = document.getElementById('eventNameInput');
+  const pinInputSetting = document.getElementById('pinInputSetting');
+  const endpointInput = document.getElementById('endpointInput');
+
+  function loadSettingsForm() {
+    const c = getConfig();
+    eventNameInput.value = c.eventName;
+    pinInputSetting.value = c.pin;
+    endpointInput.value = c.uploadEndpoint;
+  }
+  loadSettingsForm();
+
+  document.getElementById('settingsForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    setConfig({
+      eventName: eventNameInput.value.trim() || 'Din Selfie Booth',
+      pin: pinInputSetting.value.trim() || '1234',
+      uploadEndpoint: endpointInput.value.trim(),
+    });
+    const confirmEl = document.getElementById('saveConfirm');
+    confirmEl.classList.add('show');
+    setTimeout(() => confirmEl.classList.remove('show'), 2000);
+  });
+</script>
+</body>
+</html>

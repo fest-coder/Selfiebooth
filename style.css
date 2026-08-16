@@ -1,0 +1,99 @@
+:root {
+  --bg-deep: #14121a;
+  --bg-surface: #1f1b2e;
+  --bg-surface-2: #2a2438;
+  --accent-flash: #ffd23f;
+  --accent-pop: #ff4d8d;
+  --text-primary: #f5f3f7;
+  --text-muted: #9c96aa;
+  --success: #4ade80;
+  --danger: #ff6b6b;
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-editorial: 'Fraunces', serif;
+  --font-body: 'Inter', sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: var(--bg-deep);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+button {
+  font-family: var(--font-body);
+  cursor: pointer;
+  border: none;
+}
+
+button:focus-visible,
+input:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--accent-flash);
+  outline-offset: 2px;
+}
+
+.btn {
+  padding: 12px 22px;
+  border-radius: 999px;
+  font-size: 15px;
+  font-weight: 600;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.btn:active {
+  transform: scale(0.96);
+}
+
+.btn-primary {
+  background: var(--accent-flash);
+  color: #241d00;
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-primary);
+  border: 1px solid rgba(245, 243, 247, 0.25);
+}
+
+.btn-danger {
+  background: rgba(255, 107, 107, 0.15);
+  color: var(--danger);
+  border: 1px solid rgba(255, 107, 107, 0.35);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.badge-synced {
+  background: rgba(74, 222, 128, 0.15);
+  color: var(--success);
+}
+
+.badge-pending {
+  background: rgba(255, 210, 63, 0.15);
+  color: var(--accent-flash);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}

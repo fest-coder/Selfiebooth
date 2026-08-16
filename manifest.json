@@ -1,0 +1,10 @@
+{
+  "name": "Selfie Booth",
+  "short_name": "Booth",
+  "start_url": "index.html",
+  "display": "fullscreen",
+  "orientation": "any",
+  "background_color": "#14121a",
+  "theme_color": "#14121a",
+  "icons": []
+}
