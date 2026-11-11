@@ -1,0 +1,266 @@
+/* ------------------------------------------------------------------
+   Minglo — fælles designsystem
+   Skift farver, fonte og former ét sted: alle sider læser disse tokens.
+------------------------------------------------------------------- */
+
+@font-face {
+  font-family: 'Instrument Serif';
+  src: url('../fonts/instrument-serif-latin-400-normal.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Instrument Serif';
+  src: url('../fonts/instrument-serif-latin-400-italic.woff2') format('woff2');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Outfit';
+  src: url('../fonts/outfit-latin-wght-normal.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  /* Flader */
+  --ink: #0a090f;
+  --ink-2: #13111b;
+  --ink-3: #1d1a28;
+  --line: rgba(255, 255, 255, 0.1);
+  --line-strong: rgba(255, 255, 255, 0.22);
+
+  /* Tekst */
+  --cream: #f7f1e6;
+  --muted: rgba(247, 241, 230, 0.62);
+  --faint: rgba(247, 241, 230, 0.38);
+
+  /* Accent — champagne + festgradient */
+  --gold: #ecd09a;
+  --gold-deep: #c9a160;
+  --fest-1: #ff5fa2;
+  --fest-2: #ff8a5b;
+  --fest-3: #ffd68a;
+  --fest: linear-gradient(115deg, var(--fest-1), var(--fest-2) 52%, var(--fest-3));
+  --ok: #7be0a6;
+  --warn: #ffc56b;
+  --bad: #ff7d7d;
+
+  /* Typografi */
+  --serif: 'Instrument Serif', 'Times New Roman', serif;
+  --sans: 'Outfit', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  /* Form */
+  --r-s: 12px;
+  --r-m: 20px;
+  --r-l: 32px;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --shadow: 0 30px 80px -20px rgba(0, 0, 0, 0.7);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  background: var(--ink);
+  color: var(--cream);
+  font-family: var(--sans);
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button,
+input,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+  border: 0;
+  background: none;
+  padding: 0;
+}
+
+:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 3px;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+/* --- Ordmærke -------------------------------------------------- */
+.wordmark {
+  font-family: var(--sans);
+  font-weight: 600;
+  letter-spacing: 0.34em;
+  text-transform: uppercase;
+  font-size: 15px;
+  color: var(--cream);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7em;
+  padding-left: 0.34em; /* optisk centrering af spatieret tekst */
+}
+.wordmark::before {
+  content: '';
+  width: 0.62em;
+  height: 0.62em;
+  border-radius: 50%;
+  background: var(--fest);
+  box-shadow: 0 0 18px rgba(255, 138, 91, 0.8);
+  margin-left: -0.34em;
+}
+.wordmark img {
+  height: 2.2em;
+  width: auto;
+  display: block;
+}
+.wordmark.has-logo {
+  padding-left: 0;
+  letter-spacing: 0;
+}
+.wordmark.has-logo::before {
+  display: none;
+}
+
+/* --- Overskrifter ---------------------------------------------- */
+.display {
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 400;
+  line-height: 0.98;
+  letter-spacing: -0.01em;
+  margin: 0;
+  text-wrap: balance;
+}
+.eyebrow {
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+.fest-text {
+  background: var(--fest);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* --- Knapper --------------------------------------------------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 60px;
+  padding: 0 34px;
+  border-radius: 999px;
+  font-size: 18px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  text-decoration: none;
+  transition: transform 0.25s var(--ease), box-shadow 0.25s var(--ease), background 0.2s, opacity 0.2s;
+}
+.btn:active {
+  transform: scale(0.96);
+}
+.btn:disabled {
+  opacity: 0.45;
+  pointer-events: none;
+}
+.btn-fest {
+  background: var(--fest);
+  color: #2a0f12;
+  font-weight: 600;
+  box-shadow: 0 14px 40px -10px rgba(255, 110, 130, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.45);
+}
+.btn-glass {
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--cream);
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
+}
+.btn-danger {
+  background: rgba(255, 125, 125, 0.1);
+  color: var(--bad);
+  box-shadow: inset 0 0 0 1px rgba(255, 125, 125, 0.4);
+}
+.btn-s {
+  min-height: 46px;
+  padding: 0 22px;
+  font-size: 15px;
+}
+
+/* --- Stemningslys (bløde, drivende lyskugler) ------------------- */
+.aura {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.aura i {
+  position: absolute;
+  width: 60vmax;
+  height: 60vmax;
+  border-radius: 50%;
+  filter: blur(90px);
+  opacity: 0.4;
+  will-change: transform;
+  animation: drift 26s ease-in-out infinite alternate;
+}
+.aura i:nth-child(1) {
+  background: var(--fest-1);
+  left: -22vmax;
+  top: -26vmax;
+}
+.aura i:nth-child(2) {
+  background: var(--fest-2);
+  right: -28vmax;
+  bottom: -30vmax;
+  animation-duration: 32s;
+  animation-direction: alternate-reverse;
+}
+.aura i:nth-child(3) {
+  background: #6c4bff;
+  width: 44vmax;
+  height: 44vmax;
+  left: 34%;
+  bottom: -30vmax;
+  opacity: 0.26;
+  animation-duration: 38s;
+}
+@keyframes drift {
+  from {
+    transform: translate3d(-4vmax, -3vmax, 0) scale(1);
+  }
+  to {
+    transform: translate3d(7vmax, 6vmax, 0) scale(1.18);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

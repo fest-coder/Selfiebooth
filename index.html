@@ -1,885 +1,121 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="da">
 <head>
-<meta charset="UTF-8">
+<meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>Selfie Booth</title>
-<link rel="manifest" href="manifest.json">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Fraunces:ital,wght@0,500;1,500&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
-<style>
-  .stage {
-    position: fixed;
-    inset: 0;
-    background: #000;
-    overflow: hidden;
-  }
-
-  video#preview {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transform: scaleX(-1);
-  }
-
-  video#preview.hidden-preview {
-    visibility: hidden;
-  }
-
-  .topbar {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    z-index: 5;
-    padding: max(20px, env(safe-area-inset-top)) 28px 40px;
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.6), transparent);
-    pointer-events: none;
-  }
-
-  .event-name {
-    font-family: var(--font-editorial);
-    font-style: italic;
-    font-size: 24px;
-    color: #fff;
-    letter-spacing: 0.01em;
-    pointer-events: auto;
-  }
-
-  .status-dot {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 12px;
-    color: rgba(255, 255, 255, 0.75);
-    font-weight: 600;
-  }
-
-  .status-dot .dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--success);
-  }
-
-  .status-dot.offline .dot {
-    background: var(--danger);
-  }
-
-  .controls-bottom {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    z-index: 5;
-    padding: 40px 24px max(32px, env(safe-area-inset-bottom));
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 18px;
-    background: linear-gradient(to top, rgba(0, 0, 0, 0.65), transparent);
-  }
-
-  .hint {
-    font-size: 15px;
-    color: rgba(255, 255, 255, 0.8);
-    font-weight: 600;
-  }
-
-  .mode-toggle {
-    display: flex;
-    gap: 8px;
-    background: rgba(0, 0, 0, 0.35);
-    padding: 5px;
-    border-radius: 999px;
-  }
-
-  .mode-pill {
-    background: transparent;
-    color: rgba(255, 255, 255, 0.7);
-    font-size: 13px;
-    font-weight: 600;
-    padding: 8px 16px;
-    border-radius: 999px;
-    transition: background 0.15s ease, color 0.15s ease;
-  }
-
-  .mode-pill.active {
-    background: var(--accent-flash);
-    color: #241d00;
-  }
-
-  .mode-pill:disabled {
-    opacity: 0.5;
-  }
-
-  .filter-toggle {
-    display: flex;
-    gap: 8px;
-    background: rgba(0, 0, 0, 0.35);
-    padding: 5px;
-    border-radius: 999px;
-  }
-
-  .filter-pill {
-    background: transparent;
-    color: rgba(255, 255, 255, 0.7);
-    font-size: 12px;
-    font-weight: 600;
-    padding: 7px 14px;
-    border-radius: 999px;
-    transition: background 0.15s ease, color 0.15s ease;
-  }
-
-  .filter-pill.active {
-    background: var(--accent-pop);
-    color: #fff;
-  }
-
-  .filter-pill:disabled {
-    opacity: 0.5;
-  }
-
-  .shutter-btn {
-    width: 84px;
-    height: 84px;
-    border-radius: 50%;
-    background: transparent;
-    border: 4px solid var(--accent-flash);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
-    transition: transform 0.15s ease;
-  }
-
-  .shutter-btn:active {
-    transform: scale(0.92);
-  }
-
-  .shutter-btn .inner {
-    width: 64px;
-    height: 64px;
-    border-radius: 50%;
-    background: #fff;
-  }
-
-  .shutter-btn:disabled {
-    opacity: 0.4;
-  }
-
-  .filmstrip {
-    position: absolute;
-    top: 50%;
-    left: 20px;
-    transform: translateY(-50%);
-    z-index: 4;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .filmstrip .thumb {
-    width: 58px;
-    height: 58px;
-    border-radius: 6px;
-    overflow: hidden;
-    border: 2px solid var(--accent-pop);
-    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.4);
-  }
-
-  .filmstrip .thumb:nth-child(odd) {
-    transform: rotate(-4deg);
-  }
-
-  .filmstrip .thumb:nth-child(even) {
-    transform: rotate(3deg);
-  }
-
-  .filmstrip .thumb img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-
-  .overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 10;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-  }
-
-  .overlay.active {
-    display: flex;
-  }
-
-  #countdownOverlay {
-    background: rgba(0, 0, 0, 0.4);
-  }
-
-  .countdown-number {
-    font-family: var(--font-display);
-    font-weight: 700;
-    font-size: 240px;
-    color: var(--accent-flash);
-    text-shadow: 0 0 60px rgba(255, 210, 63, 0.5);
-    line-height: 1;
-  }
-
-  .countdown-number.pulse {
-    animation: pulse 1s ease-out;
-  }
-
-  .countdown-sub {
-    font-family: var(--font-body);
-    font-size: 18px;
-    font-weight: 600;
-    color: rgba(255, 255, 255, 0.85);
-    margin-top: 14px;
-    min-height: 24px;
-  }
-
-  @keyframes pulse {
-    0% { transform: scale(0.6); opacity: 0; }
-    30% { transform: scale(1.08); opacity: 1; }
-    100% { transform: scale(1); opacity: 1; }
-  }
-
-  #flashOverlay {
-    background: #fff;
-    opacity: 0;
-    pointer-events: none;
-    z-index: 20;
-  }
-
-  #shutterEffect {
-    position: fixed;
-    inset: 0;
-    z-index: 21;
-    pointer-events: none;
-    display: none;
-  }
-
-  #shutterEffect.active {
-    display: block;
-  }
-
-  .shutter-bar {
-    position: absolute;
-    left: 0;
-    right: 0;
-    height: 50%;
-    background: #000;
-  }
-
-  .shutter-bar.top {
-    top: 0;
-    transform: translateY(-100%);
-  }
-
-  .shutter-bar.bottom {
-    bottom: 0;
-    transform: translateY(100%);
-  }
-
-  #shutterEffect.active .shutter-bar.top {
-    animation: shutterCloseTop 280ms cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  #shutterEffect.active .shutter-bar.bottom {
-    animation: shutterCloseBottom 280ms cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  @keyframes shutterCloseTop {
-    0% { transform: translateY(-100%); }
-    40% { transform: translateY(0); }
-    60% { transform: translateY(0); }
-    100% { transform: translateY(-100%); }
-  }
-
-  @keyframes shutterCloseBottom {
-    0% { transform: translateY(100%); }
-    40% { transform: translateY(0); }
-    60% { transform: translateY(0); }
-    100% { transform: translateY(100%); }
-  }
-
-  #flashOverlay.flash-active {
-    animation: flashPulse 0.35s ease-out;
-  }
-
-  @keyframes flashPulse {
-    0% { opacity: 0; }
-    15% { opacity: 1; }
-    100% { opacity: 0; }
-  }
-
-  #reviewOverlay {
-    background: var(--bg-deep);
-    gap: 20px;
-    padding: 24px;
-  }
-
-  .polaroid {
-    background: #fff;
-    padding: 14px 14px 40px;
-    border-radius: 4px;
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
-    max-width: min(80vw, 420px);
-    max-height: 78vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .polaroid img {
-    display: block;
-    max-width: 100%;
-    max-height: 68vh;
-    width: auto;
-    height: auto;
-    border-radius: 2px;
-  }
-
-  .review-caption {
-    font-size: 15px;
-    color: var(--text-muted);
-    font-weight: 600;
-    text-align: center;
-  }
-
-  .review-caption strong {
-    color: var(--accent-flash);
-  }
-
-  .review-progress {
-    width: 180px;
-    height: 4px;
-    background: rgba(255, 255, 255, 0.15);
-    border-radius: 2px;
-    overflow: hidden;
-  }
-
-  .review-progress-bar {
-    height: 100%;
-    background: var(--accent-flash);
-    width: 100%;
-    transform-origin: left;
-  }
-
-  #permissionOverlay {
-    background: var(--bg-deep);
-    padding: 40px;
-    text-align: center;
-    gap: 16px;
-  }
-
-  #permissionOverlay h2 {
-    font-family: var(--font-editorial);
-    font-style: italic;
-    font-weight: 500;
-    font-size: 26px;
-    margin: 0;
-  }
-
-  #permissionOverlay p {
-    color: var(--text-muted);
-    max-width: 420px;
-    line-height: 1.6;
-    margin: 0;
-  }
-</style>
+<title>Minglo Selfie</title>
+<meta name="theme-color" content="#0a090f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Minglo Selfie">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="preload" href="fonts/instrument-serif-latin-400-italic.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/outfit-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="css/minglo.css">
+<link rel="stylesheet" href="css/booth.css">
 </head>
 <body>
+<div id="app" data-screen="attract">
 
-<div class="stage">
-  <video id="preview" autoplay playsinline muted></video>
-
-  <div class="topbar">
-    <div class="event-name" id="eventNameLabel">Din Selfie Booth</div>
-    <div class="status-dot" id="statusDot"><span class="dot"></span><span id="statusText">Online</span></div>
+  <!-- Baggrund: sløret live-kamera + stemningslys -->
+  <div class="bg">
+    <video id="bgcam" playsinline muted aria-hidden="true"></video>
+    <div class="aura"><i></i><i></i><i></i></div>
+    <div class="veil"></div>
   </div>
 
-  <div class="filmstrip" id="filmstrip"></div>
+  <!-- 1 · Velkomst -->
+  <section class="screen" id="s-attract" aria-label="Velkommen">
+    <header class="attract-top">
+      <span class="wordmark" id="brand" data-brand>minglo</span>
+    </header>
+    <div class="attract-mid">
+      <p class="eyebrow">Selfie booth</p>
+      <h1 class="display" id="evName"></h1>
+      <p class="ev-date" id="evDate"></p>
+    </div>
+    <div class="cta">
+      <span class="cta-ring">
+        <svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1.2l1.2-1.8h6.2L16.3 6h1.2A2.5 2.5 0 0 1 20 8.5v8A2.5 2.5 0 0 1 17.500 19h-11A2.5 2.5 0 0 1 4 16.500z"/><circle cx="12" cy="12.500" r="3.4"/></svg>
+      </span>
+      <span class="cta-label">Tryk for at starte</span>
+    </div>
+  </section>
 
-  <div class="controls-bottom">
-    <div class="filter-toggle" id="filterToggle">
-      <button class="filter-pill" data-filter="normal">Normal</button>
-      <button class="filter-pill" data-filter="bw">S/H</button>
-      <button class="filter-pill" data-filter="sepia">Sepia</button>
-      <button class="filter-pill" data-filter="warm">Varm</button>
+  <!-- 2 · Optagelse -->
+  <section class="screen" id="s-shoot" aria-label="Tag et billede">
+    <div class="shoot-top">
+      <button class="icon-btn" id="backBtn" aria-label="Tilbage til start">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+      </button>
+      <span class="wordmark" data-brand>minglo</span>
+      <span class="icon-btn-space"></span>
     </div>
-    <div class="mode-toggle" id="modeToggle">
-      <button class="mode-pill" data-mode="single">1 billede</button>
-      <button class="mode-pill" data-mode="strip">Fotostrimmel</button>
-      <button class="mode-pill" data-mode="grid">Kvadrat</button>
+
+    <div class="finder-wrap">
+      <div class="finder" id="finder">
+        <video id="cam" playsinline muted></video>
+        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        <div class="count" id="count" aria-live="assertive"></div>
+        <div class="finder-msg" id="finderMsg"></div>
+        <div class="shots" id="shots"></div>
+      </div>
     </div>
-    <div class="hint">Tryk for at tage billede</div>
-    <button class="shutter-btn" id="shutterBtn" aria-label="Tag billede">
-      <span class="inner"></span>
-    </button>
+
+    <div class="controls">
+      <div class="seg" id="modeSeg" role="radiogroup" aria-label="Vælg format"></div>
+      <div class="chips" id="filterChips" role="radiogroup" aria-label="Vælg look"></div>
+      <button class="shutter" id="shutter" aria-label="Tag billede"><span></span></button>
+      <p class="hint" id="hint">Tryk — og smil</p>
+    </div>
+  </section>
+
+  <!-- 3 · Se billedet -->
+  <section class="screen" id="s-review" aria-label="Se dit billede">
+    <div class="review-head">
+      <p class="eyebrow">Sådan</p>
+      <h2 class="display">I ser <span class="fest-text">fantastiske</span> ud</h2>
+    </div>
+    <div class="print-wrap"><img class="print" id="reviewImg" alt="Dit billede"></div>
+    <div class="actions">
+      <button class="btn btn-glass" id="retake">Tag om</button>
+      <button class="btn btn-fest" id="keep">Behold billedet</button>
+    </div>
+    <div class="timerbar"><i id="reviewTimer"></i></div>
+  </section>
+
+  <!-- 4 · Del -->
+  <section class="screen" id="s-share" aria-label="Hent dit billede">
+    <div class="print-wrap share-print"><img class="print" id="shareImg" alt="Dit billede"></div>
+    <div class="share-side">
+      <p class="eyebrow">Gemt</p>
+      <h2 class="display" id="shareTitle">Tag det med hjem</h2>
+      <div class="qr-card" id="qrCard">
+        <div class="qr" id="qr"></div>
+        <p>Scan med mobilens kamera</p>
+      </div>
+      <p class="share-note" id="shareNote"></p>
+      <button class="btn btn-fest" id="done">Færdig</button>
+    </div>
+    <div class="timerbar"><i id="shareTimer"></i></div>
+  </section>
+
+  <div class="flash" id="flash"></div>
+  <canvas class="confetti" id="confetti"></canvas>
+
+  <!-- Kamera-fejl -->
+  <div class="cam-error" id="camError" hidden>
+    <p class="eyebrow">Kamera</p>
+    <h2 class="display">Vi mangler lige kameraet</h2>
+    <p id="camErrorText">Giv adgang til kameraet for at komme i gang.</p>
+    <button class="btn btn-fest" id="camRetry">Prøv igen</button>
   </div>
+
+  <div id="adminRoot"></div>
 </div>
-
-<div class="overlay" id="countdownOverlay">
-  <div class="countdown-number" id="countdownNumber">3</div>
-  <div class="countdown-sub" id="countdownSub"></div>
-</div>
-
-<div class="overlay" id="flashOverlay"></div>
-
-<div id="shutterEffect">
-  <div class="shutter-bar top"></div>
-  <div class="shutter-bar bottom"></div>
-</div>
-
-<div class="overlay" id="reviewOverlay">
-  <div class="polaroid"><img id="reviewImg" alt="Dit billede"></div>
-  <div class="review-caption" id="reviewCaption">Gemt til boothen <strong>✓</strong></div>
-  <div class="review-progress"><div class="review-progress-bar" id="reviewProgressBar"></div></div>
-</div>
-
-<div class="overlay" id="permissionOverlay">
-  <h2>Kameraet mangler adgang</h2>
-  <p id="permissionText">Denne enhed skal give adgang til kameraet, før boothen kan bruges. Tjek browserens indstillinger og genindlæs siden.</p>
-</div>
-
-<canvas id="captureCanvas" style="display:none"></canvas>
-
-<script src="db.js"></script>
-<script>
-  const config = getConfig();
-  document.getElementById('eventNameLabel').textContent = config.eventName;
-
-  const video = document.getElementById('preview');
-  const shutterBtn = document.getElementById('shutterBtn');
-  const countdownOverlay = document.getElementById('countdownOverlay');
-  const countdownNumber = document.getElementById('countdownNumber');
-  const flashOverlay = document.getElementById('flashOverlay');
-  const reviewOverlay = document.getElementById('reviewOverlay');
-  const reviewImg = document.getElementById('reviewImg');
-  const reviewCaption = document.getElementById('reviewCaption');
-  const reviewProgressBar = document.getElementById('reviewProgressBar');
-  const permissionOverlay = document.getElementById('permissionOverlay');
-  const permissionText = document.getElementById('permissionText');
-  const filmstrip = document.getElementById('filmstrip');
-  const canvas = document.getElementById('captureCanvas');
-  const statusDot = document.getElementById('statusDot');
-  const statusText = document.getElementById('statusText');
-  const countdownSub = document.getElementById('countdownSub');
-  const modePills = Array.from(document.querySelectorAll('.mode-pill'));
-  const filterPills = Array.from(document.querySelectorAll('.filter-pill'));
-
-  const FILTERS = {
-    normal: { label: 'Normal', css: 'none' },
-    bw: { label: 'S/H', css: 'grayscale(1) contrast(1.05)' },
-    sepia: { label: 'Sepia', css: 'sepia(0.65) contrast(1.05) saturate(1.1)' },
-    warm: { label: 'Varm', css: 'saturate(1.3) contrast(1.05) brightness(1.05) hue-rotate(-6deg)' },
-  };
-
-  let isCapturing = false;
-  let captureMode = config.captureMode || 'single';
-  let activeFilter = config.filter || 'normal';
-
-  function applyPreviewFilter() {
-    video.style.filter = FILTERS[activeFilter].css;
-  }
-
-  function setActiveFilterPill() {
-    filterPills.forEach((btn) => btn.classList.toggle('active', btn.dataset.filter === activeFilter));
-  }
-  setActiveFilterPill();
-  applyPreviewFilter();
-
-  filterPills.forEach((btn) => {
-    btn.addEventListener('click', () => {
-      if (isCapturing) return;
-      activeFilter = btn.dataset.filter;
-      setActiveFilterPill();
-      applyPreviewFilter();
-      setConfig({ filter: activeFilter });
-    });
-  });
-
-  function setActivePill() {
-    modePills.forEach((btn) => btn.classList.toggle('active', btn.dataset.mode === captureMode));
-  }
-  setActivePill();
-
-  modePills.forEach((btn) => {
-    btn.addEventListener('click', () => {
-      if (isCapturing) return;
-      captureMode = btn.dataset.mode;
-      setActivePill();
-      setConfig({ captureMode });
-    });
-  });
-
-  async function initCamera() {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        // "ideal" her er bevidst sat højere end noget iPad-frontkamera reelt
-        // leverer i dag — browseren vælger automatisk den højeste opløsning,
-        // den faktisk understøtter, i stedet for at vi selv skal gætte den.
-        video: { facingMode: 'user', width: { ideal: 4032 }, height: { ideal: 3024 } },
-        audio: false,
-      });
-      video.srcObject = stream;
-      video.addEventListener('loadedmetadata', () => {
-        const info = { width: video.videoWidth, height: video.videoHeight, updatedAt: Date.now() };
-        try {
-          localStorage.setItem('boothCameraInfo', JSON.stringify(info));
-        } catch {
-          // ignorer — kun til diagnostik, ikke kritisk
-        }
-      }, { once: true });
-    } catch (err) {
-      console.error('Kamera-fejl', err);
-      permissionText.textContent = err.name === 'NotAllowedError'
-        ? 'Adgang til kameraet blev afvist. Genindlæs siden og tillad adgang, når browseren spørger.'
-        : 'Kunne ikke starte kameraet på denne enhed. Tjek at ingen anden app bruger det, og genindlæs siden.';
-      permissionOverlay.classList.add('active');
-    }
-  }
-
-  function updateOnlineStatus() {
-    const online = navigator.onLine;
-    statusDot.classList.toggle('offline', !online);
-    statusText.textContent = online ? 'Online' : 'Offline · gemmer lokalt';
-  }
-  window.addEventListener('online', updateOnlineStatus);
-  window.addEventListener('offline', updateOnlineStatus);
-  updateOnlineStatus();
-
-  function wait(ms) {
-    return new Promise((resolve) => setTimeout(resolve, ms));
-  }
-
-  async function runCountdown(subLabel) {
-    countdownSub.textContent = subLabel || '';
-    countdownOverlay.classList.add('active');
-    for (let n = config.countdownSeconds; n >= 1; n -= 1) {
-      countdownNumber.textContent = String(n);
-      countdownNumber.classList.remove('pulse');
-      // eslint-disable-next-line no-unused-expressions
-      void countdownNumber.offsetWidth; // genstart animation
-      countdownNumber.classList.add('pulse');
-      await wait(1000);
-    }
-    countdownOverlay.classList.remove('active');
-  }
-
-  function triggerFlash() {
-    flashOverlay.classList.add('flash-active');
-    setTimeout(() => flashOverlay.classList.remove('flash-active'), 400);
-  }
-
-  const shutterEffect = document.getElementById('shutterEffect');
-
-  function triggerShutterBlink() {
-    shutterEffect.classList.remove('active');
-    // eslint-disable-next-line no-unused-expressions
-    void shutterEffect.offsetWidth; // genstart animation
-    shutterEffect.classList.add('active');
-    setTimeout(() => shutterEffect.classList.remove('active'), 320);
-  }
-
-  function triggerCaptureEffect() {
-    triggerFlash();
-    triggerShutterBlink();
-  }
-
-  function drawWatermark(ctx, w, h) {
-    const label = config.eventName;
-    ctx.save();
-    ctx.font = '600 28px Inter, sans-serif';
-    ctx.textBaseline = 'bottom';
-    const metrics = ctx.measureText(label);
-    const padding = 24;
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
-    ctx.fillRect(0, h - 64, metrics.width + padding * 2, 64);
-    ctx.fillStyle = '#ffffff';
-    ctx.fillText(label, padding, h - 20);
-    ctx.restore();
-  }
-
-  function capturePhoto() {
-    const w = video.videoWidth;
-    const h = video.videoHeight;
-    canvas.width = w;
-    canvas.height = h;
-    const ctx = canvas.getContext('2d');
-    // Spejlvend ligesom preview, så billedet matcher det gæsten så
-    ctx.translate(w, 0);
-    ctx.scale(-1, 1);
-    ctx.filter = FILTERS[activeFilter].css;
-    ctx.drawImage(video, 0, 0, w, h);
-    ctx.filter = 'none';
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    drawWatermark(ctx, w, h);
-
-    return new Promise((resolve) => {
-      canvas.toBlob((blob) => resolve(blob), 'image/jpeg', 0.92);
-    });
-  }
-
-  // Tegner videobilledet spejlvendt, beskåret til et bestemt mål-format,
-  // ind i et vilkårligt canvas-felt. Bruges til at lave ensartede celler
-  // til fotostrimmel og kvadrat, uanset tabletens kamera-format.
-  function drawMirroredCropped(ctx, dx, dy, dw, dh) {
-    const vw = video.videoWidth;
-    const vh = video.videoHeight;
-    const targetAr = dw / dh;
-    const sourceAr = vw / vh;
-    let sx;
-    let sy;
-    let sw;
-    let sh;
-    if (sourceAr > targetAr) {
-      sh = vh;
-      sw = vh * targetAr;
-      sy = 0;
-      sx = (vw - sw) / 2;
-    } else {
-      sw = vw;
-      sh = vw / targetAr;
-      sx = 0;
-      sy = (vh - sh) / 2;
-    }
-    ctx.save();
-    ctx.filter = FILTERS[activeFilter].css;
-    ctx.translate(dx + dw, dy);
-    ctx.scale(-1, 1);
-    ctx.drawImage(video, sx, sy, sw, sh, 0, 0, dw, dh);
-    ctx.restore();
-  }
-
-  function captureCell(w, h) {
-    const cell = document.createElement('canvas');
-    cell.width = w;
-    cell.height = h;
-    drawMirroredCropped(cell.getContext('2d'), 0, 0, w, h);
-    return cell;
-  }
-
-  function drawCaption(ctx, centerX, centerY) {
-    ctx.textAlign = 'center';
-    ctx.fillStyle = '#14121a';
-    ctx.font = "700 22px -apple-system, system-ui, sans-serif";
-    ctx.fillText(config.eventName, centerX, centerY - 6);
-    ctx.fillStyle = '#7a7a7a';
-    ctx.font = "500 14px -apple-system, system-ui, sans-serif";
-    const dateStr = new Date().toLocaleDateString('da-DK', { day: 'numeric', month: 'long', year: 'numeric' });
-    ctx.fillText(dateStr, centerX, centerY + 16);
-  }
-
-  const STRIP_CELL = { w: 360, h: 480 };
-  const GRID_CELL = { w: 320, h: 320 };
-  const MARGIN = 16;
-  const GUTTER = 12;
-  const CAPTION_H = 70;
-
-  function composeStrip(frames) {
-    const { w, h } = STRIP_CELL;
-    const totalW = w + MARGIN * 2;
-    const totalH = MARGIN + frames.length * h + (frames.length - 1) * GUTTER + MARGIN + CAPTION_H;
-    const out = document.createElement('canvas');
-    out.width = totalW;
-    out.height = totalH;
-    const ctx = out.getContext('2d');
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, totalW, totalH);
-    frames.forEach((frame, i) => {
-      const y = MARGIN + i * (h + GUTTER);
-      ctx.drawImage(frame, MARGIN, y, w, h);
-    });
-    drawCaption(ctx, totalW / 2, totalH - CAPTION_H / 2);
-    return out;
-  }
-
-  function composeGrid(frames) {
-    const { w, h } = GRID_CELL;
-    const totalW = MARGIN * 2 + w * 2 + GUTTER;
-    const totalH = MARGIN * 2 + h * 2 + GUTTER + CAPTION_H;
-    const out = document.createElement('canvas');
-    out.width = totalW;
-    out.height = totalH;
-    const ctx = out.getContext('2d');
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, totalW, totalH);
-    frames.forEach((frame, i) => {
-      const col = i % 2;
-      const row = Math.floor(i / 2);
-      const x = MARGIN + col * (w + GUTTER);
-      const y = MARGIN + row * (h + GUTTER);
-      ctx.drawImage(frame, x, y, w, h);
-    });
-    drawCaption(ctx, totalW / 2, totalH - CAPTION_H / 2);
-    return out;
-  }
-
-  async function handleMultiShot(mode) {
-    const shots = 4;
-    const cellDims = mode === 'grid' ? GRID_CELL : STRIP_CELL;
-    const frames = [];
-    for (let i = 1; i <= shots; i += 1) {
-      // eslint-disable-next-line no-await-in-loop
-      await runCountdown(`Billede ${i} af ${shots}`);
-      triggerCaptureEffect();
-      frames.push(captureCell(cellDims.w, cellDims.h));
-      if (i < shots) {
-        // eslint-disable-next-line no-await-in-loop
-        await wait(700); // kort pause så gæsten kan nå at stille sig om
-      }
-    }
-    const composed = mode === 'grid' ? composeGrid(frames) : composeStrip(frames);
-    const blob = await new Promise((resolve) => composed.toBlob(resolve, 'image/jpeg', 0.92));
-    await addPhoto(blob);
-    addToFilmstrip(blob);
-    await showReview(blob, mode);
-    trySyncQueue();
-  }
-
-  function addToFilmstrip(blob) {
-    const url = URL.createObjectURL(blob);
-    const thumb = document.createElement('div');
-    thumb.className = 'thumb';
-    thumb.innerHTML = `<img src="${url}" alt="Tidligere billede">`;
-    filmstrip.insertBefore(thumb, filmstrip.firstChild);
-    while (filmstrip.children.length > 4) {
-      filmstrip.removeChild(filmstrip.lastChild);
-    }
-  }
-
-  async function showReview(blob, kind) {
-    const url = URL.createObjectURL(blob);
-    reviewImg.src = url;
-    const savedLabel = kind === 'strip' ? 'Fotostrimmel gemt'
-      : kind === 'grid' ? 'Kvadrat-billede gemt'
-      : 'Gemt til boothen';
-    reviewCaption.innerHTML = navigator.onLine
-      ? `${savedLabel} <strong>✓</strong>`
-      : `${savedLabel} lokalt <strong>✓</strong> — uploades når I er online igen`;
-    reviewOverlay.classList.add('active');
-
-    reviewProgressBar.style.transition = 'none';
-    reviewProgressBar.style.transform = 'scaleX(1)';
-    // eslint-disable-next-line no-unused-expressions
-    void reviewProgressBar.offsetWidth;
-    reviewProgressBar.style.transition = `transform ${config.reviewSeconds}s linear`;
-    reviewProgressBar.style.transform = 'scaleX(0)';
-
-    await wait(config.reviewSeconds * 1000);
-    reviewOverlay.classList.remove('active');
-    URL.revokeObjectURL(url);
-  }
-
-  async function handleShutter() {
-    if (isCapturing) return;
-    isCapturing = true;
-    shutterBtn.disabled = true;
-    modePills.forEach((btn) => { btn.disabled = true; });
-
-    try {
-      if (captureMode === 'strip' || captureMode === 'grid') {
-        await handleMultiShot(captureMode);
-      } else {
-        await runCountdown();
-        triggerCaptureEffect();
-        const blob = await capturePhoto();
-        await addPhoto(blob);
-        addToFilmstrip(blob);
-        await showReview(blob, 'single');
-        trySyncQueue(); // forsøg med det samme — no-op hvis offline eller ingen endpoint sat
-      }
-    } finally {
-      isCapturing = false;
-      shutterBtn.disabled = false;
-      modePills.forEach((btn) => { btn.disabled = false; });
-    }
-  }
-
-  shutterBtn.addEventListener('click', handleShutter);
-
-  // Admin-adgang: langt tryk (2,5s) på event-navnet i toppen
-  let holdTimer = null;
-  const eventNameLabel = document.getElementById('eventNameLabel');
-  function startHold() {
-    holdTimer = setTimeout(() => {
-      const pin = prompt('Indtast pinkode for admin-adgang:');
-      if (pin === config.pin) {
-        window.location.href = 'admin.html';
-      } else if (pin !== null) {
-        alert('Forkert pinkode.');
-      }
-    }, 2500);
-  }
-  function cancelHold() {
-    clearTimeout(holdTimer);
-  }
-  eventNameLabel.addEventListener('mousedown', startHold);
-  eventNameLabel.addEventListener('touchstart', startHold);
-  ['mouseup', 'mouseleave', 'touchend', 'touchcancel'].forEach((evt) => {
-    eventNameLabel.addEventListener(evt, cancelHold);
-  });
-
-  // Holder skærmen vågen, så tabletten ikke låser/dæmper midt i et event.
-  // Wake locket frigives automatisk af browseren, hvis siden bliver skjult
-  // (fx app-skift), så vi henter det igen, når den bliver synlig igen.
-  let wakeLock = null;
-
-  async function requestWakeLock() {
-    if (!('wakeLock' in navigator)) return;
-    try {
-      wakeLock = await navigator.wakeLock.request('screen');
-      wakeLock.addEventListener('release', () => {
-        wakeLock = null;
-      });
-    } catch (err) {
-      console.warn('Kunne ikke holde skærmen vågen', err);
-    }
-  }
-
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') {
-      requestWakeLock();
-    }
-  });
-
-  // Forsøg fuldskærm ved første tryk nogen steder — hjælper kiosk-følelsen
-  document.body.addEventListener('click', function enterFullscreen() {
-    if (document.documentElement.requestFullscreen) {
-      document.documentElement.requestFullscreen().catch(() => {});
-    }
-    requestWakeLock();
-    document.body.removeEventListener('click', enterFullscreen);
-  }, { once: true });
-
-  // Vis eksisterende billeder i filmstrip ved opstart
-  (async function loadExistingFilmstrip() {
-    const photos = await getAllPhotos();
-    photos.slice(0, 4).reverse().forEach((p) => addToFilmstrip(p.blob));
-  })();
-
-  initCamera();
-  requestWakeLock();
-  startBackgroundSync(15000, (status) => {
-    // status: 'syncing' | 'idle' — kan bruges til at vise et lille sync-ikon, hvis ønsket
-  });
-
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('sw.js').catch((err) => console.warn('Service worker fejlede', err));
-    });
-  }
-</script>
+<script type="module" src="js/booth.js"></script>
 </body>
 </html>

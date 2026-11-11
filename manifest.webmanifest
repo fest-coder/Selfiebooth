@@ -1,0 +1,15 @@
+{
+  "name": "Minglo Selfie",
+  "short_name": "Minglo Selfie",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "any",
+  "background_color": "#0a090f",
+  "theme_color": "#0a090f",
+  "lang": "da",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

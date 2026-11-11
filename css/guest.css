@@ -1,0 +1,190 @@
+/* ------------------------------------------------------------------
+   Minglo Selfie — gæstesider (foto + galleri), åbnes på gæstens mobil
+------------------------------------------------------------------- */
+
+body {
+  min-height: 100dvh;
+  position: relative;
+  overflow-x: hidden;
+}
+.aura {
+  position: fixed;
+}
+.aura i {
+  opacity: 0.22;
+}
+
+.page {
+  position: relative;
+  max-width: 1100px;
+  margin: 0 auto;
+  min-height: 100dvh;
+  padding: max(22px, env(safe-area-inset-top)) max(18px, env(safe-area-inset-right)) max(28px, env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left));
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: 26px;
+  justify-items: center;
+}
+.page > header {
+  padding-top: 6px;
+}
+.page > footer {
+  font-size: 12px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--faint);
+  text-align: center;
+}
+.page > footer a {
+  color: var(--gold);
+  text-decoration: none;
+}
+
+.center {
+  display: grid;
+  gap: 22px;
+  justify-items: center;
+  align-content: center;
+  text-align: center;
+  width: 100%;
+}
+.center .display {
+  font-size: clamp(40px, 11vw, 76px);
+}
+.center p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.5;
+  max-width: 34ch;
+}
+.eyebrow {
+  margin: 0;
+}
+
+/* --- Foto ------------------------------------------------------ */
+.photo {
+  width: auto;
+  max-width: min(100%, 560px);
+  max-height: 62dvh;
+  border-radius: 10px;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.14), var(--shadow);
+  transform: rotate(-1.2deg);
+  animation: rise 0.9s var(--ease) both;
+}
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: rotate(2deg) translateY(30px) scale(0.92);
+  }
+}
+.stack {
+  display: grid;
+  gap: 12px;
+  width: min(100%, 360px);
+}
+.stack .btn {
+  width: 100%;
+}
+
+.loader {
+  width: 54px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, transparent, var(--fest-2), var(--fest-3));
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 3px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 3px));
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
+/* --- Galleri --------------------------------------------------- */
+.gallery-head {
+  display: grid;
+  gap: 10px;
+  justify-items: center;
+  text-align: center;
+}
+.gallery-head .display {
+  font-size: clamp(44px, 11vw, 96px);
+}
+.gallery-head p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+.wall {
+  width: 100%;
+  columns: 2;
+  column-gap: 10px;
+  align-self: start;
+}
+@media (min-width: 640px) {
+  .wall {
+    columns: 3;
+    column-gap: 14px;
+  }
+}
+@media (min-width: 960px) {
+  .wall {
+    columns: 4;
+  }
+}
+.wall button {
+  display: block;
+  width: 100%;
+  margin: 0 0 10px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--ink-3);
+  break-inside: avoid;
+  box-shadow: 0 0 0 1px var(--line);
+  transition: transform 0.3s var(--ease);
+}
+@media (min-width: 640px) {
+  .wall button {
+    margin-bottom: 14px;
+  }
+}
+.wall button:active {
+  transform: scale(0.97);
+}
+.wall img {
+  display: block;
+  width: 100%;
+  height: auto;
+  min-height: 80px;
+}
+
+.viewer {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  background: rgba(10, 9, 15, 0.96);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: 16px;
+  justify-items: center;
+  padding: max(18px, env(safe-area-inset-top)) 16px max(22px, env(safe-area-inset-bottom));
+}
+.viewer img {
+  max-width: 100%;
+  max-height: 100%;
+  min-height: 0;
+  object-fit: contain;
+  align-self: center;
+  border-radius: 8px;
+}
+.viewer .row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}

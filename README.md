@@ -1,132 +1,89 @@
-# Selfie Booth — DIY prototype
+# Minglo Selfie
 
-En fungerende, browser-baseret selfie-booth til udlejning. Kører som en almindelig
-hjemmeside, virker uden internet, og gemmer billeder lokalt til de kan uploades.
+Selfie booth til udlejning — bygget til iPad/tablet, kører i browseren, virker uden internet.
+
+**Gæstens flow:** tryk for at starte → vælg format og look → nedtælling → se billedet → scan QR-koden og tag det med hjem.
+
+## Det kan den
+
+- **Tre formater:** Foto, Strimmel (3 billeder) og Collage (4 billeder) — med festens navn og dato trykt på.
+- **Fire looks:** Naturlig, Glød, Noir og Retro. Det man ser i søgeren, er præcis det, der bliver gemt.
+- **QR-deling:** gæsten scanner og får sit billede på mobilen med det samme (kræver sky-opsætning, se nedenfor).
+- **Online-galleri:** ét link til kunden med alle festens billeder — opdaterer sig selv under festen.
+- **Offline først:** alle billeder gemmes på tabletten med det samme og uploades automatisk, når der er net.
+- **Admin bag kode:** eventnavn, logo, kamera, nedtælling, download af alle billeder som .zip.
+- Skærmen bruges som blitz, skærmen holdes vågen, og boothen går selv tilbage til start, når ingen rører den.
+
+## Kom i gang
+
+Kameraet kræver `https://` eller `localhost`.
+
+```bash
+python3 -m http.server 8000
+# åbn http://localhost:8000
+```
+
+Til rigtig brug hostes mappen som den er (ingen build) — fx GitHub Pages, Netlify eller Cloudflare Pages.
+
+### Før hvert event
+
+1. Åbn boothen og hold fingeren på **minglo-logoet øverst i ca. 1 sekund**. Standardkoden er `1234` (skift den under *Sikkerhed og app*).
+2. Skriv festens navn og dato, og tryk **Start nyt event** — så får kunden sit eget, tomme galleri.
+3. Send galleri-linket (eller QR-koden) til kunden.
+
+### Efter eventet
+
+Admin → **Download alle (.zip)** → **Slet alle**. Tjek at "Venter på upload" står på 0, før I sletter.
+
+### iPad som kiosk
+
+- Safari → Del → **Føj til hjemmeskærm**, og åbn appen derfra (så kører den i fuld skærm).
+- Indstillinger → Tilgængelighed → **Guidet adgang**, så gæsterne ikke kan forlade appen.
+- Brug ringlys, hold 1–1,5 m afstand, og tør linsen af — det betyder mere for billederne end noget andet.
+
+## QR-deling og online-galleri (Supabase)
+
+Uden dette trin virker boothen stadig, men billederne ligger kun på tabletten.
+
+1. Opret et gratis projekt på [supabase.com](https://supabase.com).
+2. Kør dette i **SQL Editor**:
+
+   ```sql
+   insert into storage.buckets (id, name, public)
+   values ('selfies', 'selfies', true)
+   on conflict (id) do nothing;
+
+   create policy "booth kan uploade" on storage.objects
+     for insert to anon with check (bucket_id = 'selfies');
+
+   create policy "galleri kan vise" on storage.objects
+     for select to anon using (bucket_id = 'selfies');
+   ```
+
+3. Udfyld `js/config.js` med projektets URL og den **offentlige** nøgle (anon / publishable) — aldrig `service_role`.
+4. Læg ændringen op, og tryk **Opdater app** i admin på tabletten.
+
+Billederne ligger i `selfies/<event-id>/`. Slet mappen i Supabase, når kunden har fået sine billeder.
+
+> **Privatliv:** Links til billeder og gallerier er uoplistede, ikke hemmelige — alle med linket kan se dem, og
+> den offentlige nøgle kan liste indholdet af bucket'en. Det svarer til, hvordan delte fest-gallerier normalt
+> fungerer, men aftal med kunden, hvor længe billederne skal ligge, og slet dem bagefter (GDPR).
+
+## Tilpas designet
+
+Alt det visuelle styres fra toppen af `css/minglo.css` (farver, gradient, fonte, hjørner). Logoet uploades i admin
+og erstatter teksten "minglo" både i boothen og på billederne. Layoutet af de færdige billeder ligger i `js/compose.js`.
 
 ## Filer
 
-| Fil | Formål |
+| Fil | Indhold |
 |---|---|
-| `index.html` | Selve boothen — kamera, nedtælling, capture, filmstrip |
-| `admin.html` | Galleri, sync-status og indstillinger (pinkode-beskyttet) |
-| `db.js` | Delt logik: lokalt lager (IndexedDB), indstillinger, cloud-sync |
-| `style.css` | Fælles design-tokens og styling |
-| `manifest.json` + `sw.js` | Gør boothen til en PWA, der kan starte helt offline |
+| `index.html`, `css/booth.css`, `js/booth.js` | Selve boothen |
+| `js/admin.js` | Admin-panelet |
+| `js/compose.js` | Filtre og billedlayouts |
+| `js/store.js`, `js/cloud.js` | Lokalt lager og upload-kø |
+| `foto.html`, `galleri.html`, `js/guest.js` | Siderne gæsterne ser på mobilen |
+| `js/config.js` | Sky-opsætning |
+| `sw.js`, `manifest.webmanifest` | Offline og "føj til hjemmeskærm" |
 
-## Kom i gang lokalt
-
-Kameraet kræver enten `https://` eller `localhost` — ikke almindelig `http://`.
-Til test på din computer:
-
-```bash
-cd selfiebooth
-python3 -m http.server 8000
-```
-
-Åbn `http://localhost:8000` i browseren og giv adgang til kameraet.
-
-## Filtre
-
-Fire filterknapper øverst over tilstandsvælgeren: **Normal**, **S/H**, **Sepia**
-og **Varm**. Filteret vises live i kamera-previewet og bages direkte ind i det
-gemte billede (også i fotostrimmel/kvadrat), så "det du ser er det du får".
-Admin kan sætte en standard under Indstillinger.
-
-## Få det bedste ud af iPad'ens eget kamera
-
-Vi beder nu bevidst kameraet om sin højeste tilgængelige opløsning (browseren
-vælger selv det nærmeste, den kan levere). Åbn boothen og tjek Admin → Kamera
-for at se præcis hvilken opløsning jeres specifikke iPad rent faktisk leverer.
-
-Skarpheden afhænger dog mindst lige så meget af lys og afstand som af
-opløsning:
-
-- **Ringlys er ikke valgfrit** — det er den enkeltstående ting, der gør mest
-  for billedkvaliteten. Uden det bliver billederne støjede og bløde, uanset
-  hvor mange megapixel kameraet har.
-- **Hold god afstand** — iPad'ens frontkamera er ultra-wide, så ansigter tæt
-  på linsen bliver let fortegnet. Sigt efter mindst 1–1,5 meter mellem gæst
-  og tablet.
-- **Rengør linsen** før hvert event — fingeraftryk og støv er en overraskende
-  almindelig kilde til bløde billeder.
-
-## Optagelsestilstande
-
-Der er tre knapper øverst over lukkerknappen i boothen:
-
-- **1 billede** — klassisk enkeltbillede, fuld skærm
-- **Fotostrimmel** — tager 4 billeder i træk (med kort pause imellem til at stille
-  sig om) og samler dem i én lodret strimmel med hvid kant og event-navn/dato
-  nederst, ligesom en rigtig photo booth-strimmel
-- **Kvadrat** — samme idé, men som et 2×2-gitter i stedet for en lang strimmel
-
-Valget huskes til næste billede, og admin kan sætte en standard-tilstand under
-Indstillinger, som boothen starter i.
-
-## Sådan virker det
-
-1. Gæsten vælger tilstand (eller bruger standarden) og trykker på lukkerknappen
-   → nedtælling → flash → billedet (eller alle 4, ved strip/kvadrat) gemmes
-   **øjeblikkeligt lokalt** på tabletten (IndexedDB) — uanset om der er internet.
-2. Boothen tjekker automatisk hvert 15. sekund (og med det samme ved genoprettet
-   forbindelse) om der er ikke-uploadede billeder, og forsøger at sende dem videre.
-3. Admin-siden (langt tryk på event-navnet i boothen, eller `admin.html` direkte)
-   viser alle billeder, sync-status, og lader jer downloade eller slette dem.
-
-## Sæt et rigtigt upload-endpoint op
-
-Lige nu gemmer boothen kun lokalt, indtil I sætter en `uploadEndpoint` i
-Admin → Indstillinger. `db.js` forventer en simpel `POST`-endpoint der modtager
-billedet som `multipart/form-data` under feltnavnet `file`.
-
-Nemmeste vej: **Supabase Storage** (gratis niveau er rigeligt til dette).
-
-1. Opret et gratis Supabase-projekt og en Storage-bucket, fx `booth-photos`.
-2. Lav en lille serverless-funktion (Supabase Edge Function, eller en Vercel/
-   Cloudflare Worker) der modtager filen og lægger den i bucket'en med
-   Supabase's service-role-nøgle. **Læg aldrig nøglen direkte i boothens kode** —
-   den skal blive på en server, ikke på tabletten.
-3. Sæt funktionens URL som `uploadEndpoint` i Admin → Indstillinger.
-
-Firebase Storage eller jeres egen backend fungerer efter samme princip — det
-eneste `db.js` kræver er en `POST`-endpoint der svarer `2xx` ved succes.
-
-## Sæt tabletten op i kiosk-tilstand
-
-**iPad:** Indstillinger → Tilgængelighed → Guided Access → slå til. Åbn
-`index.html` i Safari (helst tilføjet til hjemmeskærm først, så den kører uden
-browser-UI), tryk tre gange på sidebeskyttelsesknappen for at aktivere Guided
-Access, og lås skærmen til kun denne app.
-
-**Android:** Brug en kiosk-browser-app (fx "Fully Kiosk Browser") og pek den på
-jeres hostede URL, eller aktiver Android's indbyggede "Screen pinning" under
-Indstillinger → Sikkerhed.
-
-I begge tilfælde skal boothen hostes et sted med `https://` (fx GitHub Pages,
-Netlify, Vercel eller Cloudflare Pages — alle har gratis niveauer, der er
-rigelige til dette).
-
-## Idéer til videre udvikling
-
-- **Print på stedet** — koble en Bluetooth-fotoprinter til via Web Bluetooth,
-  eller send til en app som understøtter print (fx via AirPrint fra iPad).
-- **QR-deling** — generér en QR-kode efter capture, der linker direkte til det
-  uploadede billede, så gæsten kan hente det med det samme.
-- **Filtre/rammer** — tegn en branded ramme eller et event-logo ind på canvas'en
-  i `capturePhoto()`, samme sted vandmærket allerede tilføjes i dag.
-- **Flere billeder i én strimmel** — tag 3-4 billeder i træk og sæt dem sammen
-  til én lodret fotostrimmel, ligesom klassiske photo booths.
-
-## Kendte begrænsninger i denne prototype
-
-- Skærmen holdes vågen via Screen Wake Lock API (understøttet i Safari fra
-  iPadOS 16.4). På ældre iPadOS skal I stadig sætte Auto-Lock til "Aldrig" under
-  Indstillinger → Skærm og lysstyrke, som ekstra sikkerhed.
-- Cloud-upload er en integration, I selv skal koble til (se ovenfor) — der er
-  ingen "rigtig" backend inkluderet, da det kræver jeres egne cloud-nøgler.
-- Baggrunds-sync på iPad/Safari er ikke en ægte OS-niveau baggrundsproces (Safari
-  understøtter ikke Background Sync API fuldt ud) — boothen løser det ved selv at
-  tjekke forbindelsen løbende, mens den er åben og kørende, hvilket er tilstrækkeligt
-  til normal brug ved et event.
-- Der er ingen billed-komprimering ud over JPEG-kvalitet 0.92 — juster i
-  `capturePhoto()` i `index.html`, hvis I vil balancere filstørrelse vs. kvalitet.
+Fonte (Instrument Serif, Outfit — SIL OFL) og QR-biblioteket (qrcode-generator — MIT) ligger lokalt, så intet hentes udefra.
